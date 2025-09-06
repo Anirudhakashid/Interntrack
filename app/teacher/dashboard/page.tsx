@@ -227,7 +227,15 @@ export default function TeacherDashboard() {
               <Clock className="w-6 h-6 text-yellow-600" />
               <h2 className="text-2xl font-bold text-gray-900">Pending Approvals</h2>
             </div>
-            <FormApproval forms={forms} onStatusChange={fetchForms} />
+            <FormApproval
+              forms={forms.map(f => ({
+                ...f,
+                offerLetterURL: (f as any).offerLetterURL ?? '',
+                supervisorEmail: (f as any).supervisorEmail ?? '',
+                hrEmail: (f as any).hrEmail ?? '',
+              }))}
+              onStatusChange={fetchForms}
+            />
           </TabsContent>
 
           <TabsContent value="students" className="space-y-6">

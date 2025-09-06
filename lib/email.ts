@@ -1,4 +1,5 @@
-// Email service placeholder - integrate with SendGrid or SMTP
+import nodemailer from 'nodemailer'
+
 export interface EmailOptions {
   to: string
   subject: string
@@ -7,17 +8,30 @@ export interface EmailOptions {
 
 export async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> {
   try {
-    // Placeholder for actual email service integration
-    console.log('Sending email:', { to, subject })
-    console.log('HTML Content:', html)
-    
-    // In production, integrate with SendGrid, AWS SES, or SMTP
-    // Example with SendGrid:
-    // const sgMail = require('@sendgrid/mail')
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-    // await sgMail.send({ to, from: 'noreply@yourcompany.com', subject, html })
-    
-    return true
+    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env
+    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
+      console.warn('SMTP environment variables are not fully set; skipping email send.')
+      return false
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: Number(SMTP_PORT),
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    })
+
+  const info = await transporter.sendMail({
+      from: 'Interntrack <no-reply@rushabh.dev>',
+      to,
+      subject,
+      html,
+    })
+
+  const accepted = Array.isArray(info?.accepted) ? info.accepted.length : 0
+  return accepted > 0
   } catch (error) {
     console.error('Email sending failed:', error)
     return false

@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from './lib/auth'
+import { jwtVerify } from 'jose'
 
-export function middleware(request: NextRequest) {
+async function verifyJwt(token: string): Promise<any | null> {
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] })
+    return payload
+  } catch {
+    return null
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
   // Protected routes
@@ -18,7 +28,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectUrl, request.url))
     }
     
-    const user = verifyToken(token)
+    const user = await verifyJwt(token)
     if (!user) {
       const isStudentRoute = pathname.startsWith('/student')
       const redirectUrl = isStudentRoute ? '/student/login' : '/teacher/login'
