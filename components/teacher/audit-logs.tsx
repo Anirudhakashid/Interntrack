@@ -42,7 +42,7 @@ export function AuditLogs({ forms }: AuditLogsProps) {
   const fetchLogs = async () => {
     try {
       setLoading(true)
-      const url = selectedStudent 
+      const url = selectedStudent && selectedStudent !== 'all'
         ? `/api/logs?studentId=${selectedStudent}`
         : '/api/logs'
       
@@ -95,7 +95,7 @@ export function AuditLogs({ forms }: AuditLogsProps) {
                 <SelectValue placeholder="Filter by student (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Students</SelectItem>
+                <SelectItem value="all">All Students</SelectItem>
                 {uniqueStudents.map((student) => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.name}

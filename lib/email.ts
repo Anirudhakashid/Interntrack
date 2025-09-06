@@ -23,14 +23,15 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
       },
     })
 
-    await transporter.sendMail({
+  const info = await transporter.sendMail({
       from: 'Interntrack <no-reply@rushabh.dev>',
       to,
       subject,
       html,
     })
 
-    return true
+  const accepted = Array.isArray(info?.accepted) ? info.accepted.length : 0
+  return accepted > 0
   } catch (error) {
     console.error('Email sending failed:', error)
     return false
