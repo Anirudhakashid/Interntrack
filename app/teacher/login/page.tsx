@@ -116,11 +116,19 @@ export default function TeacherLogin() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-sm text-gray-600">
-          Are you a student?{' '}
-          <Link href="/student/login" className="text-emerald-600 hover:underline">
-            Sign in here
-          </Link>
+        <div className="text-center text-sm text-gray-600 space-x-2">
+          <span>
+            Are you a student?{' '}
+            <Link href="/student/login" className="text-emerald-600 hover:underline">
+              Sign in here
+            </Link>
+          </span>
+          <span className="block mt-1">
+            New teacher?{' '}
+            <Link href="/teacher/signup" className="text-emerald-600 hover:underline">
+              Create an account
+            </Link>
+          </span>
         </div>
       </div>
     </div>
