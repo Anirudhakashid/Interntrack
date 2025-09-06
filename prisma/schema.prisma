@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Student relationships
+  internshipForms InternshipForm[] @relation("StudentForms")
+  attendances     Attendance[]
+
+  // Teacher relationships
+  approvedForms InternshipForm[] @relation("TeacherForms")
+
+  @@map("users")
+}
+
+model InternshipForm {
+  id               String             @id @default(cuid())
+  studentId        String
+  teacherId        String
+  companyName      String
+  offerLetterURL   String
+  supervisorEmail  String
+  hrEmail          String
+  status           InternshipStatus   @default(PENDING)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  student      User         @relation("StudentForms", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher      User         @relation("TeacherForms", fields: [teacherId], references: [id])
+  attendances  Attendance[]
+
+  @@map("internship_forms")
+}
+
+model Attendance {
+  id               String            @id @default(cuid())
+  studentId        String
+  internshipFormId String
+  date             DateTime          @default(now())
+  status           AttendanceStatus  @default(PENDING)
+  verificationToken String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  student        User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internshipForm InternshipForm    @relation(fields: [internshipFormId], references: [id], onDelete: Cascade)
+  logs           VerificationLog[]
+
+  @@map("attendances")
+}
+
+model VerificationLog {
+  id           String   @id @default(cuid())
+  attendanceId String
+  ipAddress    String
+  location     String?
+  userAgent    String?
+  action       String
+  timestamp    DateTime @default(now())
+
+  attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@map("verification_logs")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+}
+
+enum InternshipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PENDING
+  VERIFIED
+  ABSENT
+}
