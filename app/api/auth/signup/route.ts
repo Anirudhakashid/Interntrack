@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { hashPassword } from '@/lib/auth'
-import type { UserRole } from '@prisma/client'
+// Note: avoid importing Prisma enum directly here to prevent build-time type issues
 
 const SignupSchema = z.object({
   name: z.string().min(2, 'Name is too short').max(100),
@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
     const passwordHashed = await hashPassword(data.password)
 
     const user = await prisma.user.create({
-      data: {
+        data: {
         name: data.name,
         email: data.email,
         password: passwordHashed,
-        role: data.role as UserRole,
+          role: data.role,
       },
       select: {
         id: true,
