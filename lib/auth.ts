@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken'
+import jwt, { type Secret } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET: Secret = (process.env.JWT_SECRET ?? 'your-secret-key') as Secret
 
 export interface AuthUser {
   id: string
@@ -20,12 +20,12 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function generateToken(payload: any, expiresIn: string = '24h'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn })
+  return (jwt as any).sign(payload, JWT_SECRET, { expiresIn })
 }
 
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET)
+    return (jwt as any).verify(token, JWT_SECRET)
   } catch (error) {
     return null
   }
