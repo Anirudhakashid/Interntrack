@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -35,11 +36,7 @@ export function AuditLogs({ forms }: AuditLogsProps) {
   const [loading, setLoading] = useState(true)
   const [selectedStudent, setSelectedStudent] = useState<string>('')
 
-  useEffect(() => {
-    fetchLogs()
-  }, [selectedStudent])
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true)
       const url = selectedStudent && selectedStudent !== 'all'
@@ -56,6 +53,52 @@ export function AuditLogs({ forms }: AuditLogsProps) {
     } finally {
       setLoading(false)
     }
+  }, [selectedStudent])
+
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
+
+  const exportLogsToCSV = (rows: VerificationLog[]) => {
+    if (!rows || rows.length === 0) return
+
+    const headers = [
+      'Student Name',
+      'Student Email',
+      'Company',
+      'Action',
+      'IP Address',
+      'Location',
+      'User Agent',
+      'Timestamp',
+    ]
+
+    const csvRows = [headers.join(',')]
+
+    for (const r of rows) {
+      const cols = [
+        `"${r.attendance?.student?.name ?? ''}"`,
+        `"${r.attendance?.student?.email ?? ''}"`,
+        `"${r.attendance?.internshipForm?.companyName ?? ''}"`,
+        `"${r.action}"`,
+        `"${r.ipAddress}"`,
+        `"${r.location ?? ''}"`,
+        `"${r.userAgent ?? ''}"`,
+        `"${new Date(r.timestamp).toISOString()}"`,
+      ]
+      csvRows.push(cols.join(','))
+    }
+
+    const csvContent = csvRows.join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `interntrack-logs-${new Date().toISOString()}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const getActionIcon = (action: string) => {
@@ -90,6 +133,13 @@ export function AuditLogs({ forms }: AuditLogsProps) {
         </CardHeader>
         <CardContent>
           <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div />
+              <Button size="sm" variant="ghost" onClick={() => exportLogsToCSV(logs)} disabled={logs.length === 0}>
+                Export CSV
+              </Button>
+            </div>
+
             <Select value={selectedStudent} onValueChange={setSelectedStudent}>
               <SelectTrigger className="w-[280px]">
                 <SelectValue placeholder="Filter by student (optional)" />
