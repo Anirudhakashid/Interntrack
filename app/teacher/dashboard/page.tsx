@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FormApproval } from '@/components/teacher/form-approval'
 import { AuditLogs } from '@/components/teacher/audit-logs'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { BookOpen, FileText, CheckCircle, Clock, XCircle, Activity, LogOut } from 'lucide-react'
+import { BookOpen, FileText, CheckCircle, Clock, XCircle, Activity, LogOut, BarChart3 } from 'lucide-react'
 
 interface InternshipFormData {
   id: string
@@ -103,6 +103,12 @@ export default function TeacherDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            <div className="flex justify-end mb-4">
+              <Button onClick={() => router.push('/teacher/analytics')} className="bg-blue-600 hover:bg-blue-700">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                View Analytics
+              </Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <Card>
                 <CardContent className="p-6">
