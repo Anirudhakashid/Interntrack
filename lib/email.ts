@@ -39,7 +39,8 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
 }
 
 export function generateAttendanceEmail(studentName: string, companyName: string, token: string): string {
-  const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/attendance/verify`
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const verifyUrl = `${baseUrl}/api/attendance/verify`
   
   return `
     <!DOCTYPE html>

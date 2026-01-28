@@ -88,11 +88,18 @@ export async function POST(request: NextRequest) {
       verificationToken
     )
     
-    await sendEmail({
+    const emailSent = await sendEmail({
       to: form.hrEmail,
       subject: `Attendance Verification Required - ${form.student.name}`,
       html: emailHTML
     })
+    
+    if (!emailSent) {
+      return NextResponse.json(
+        { error: 'Failed to send verification email. Please try again.' },
+        { status: 500 }
+      )
+    }
     
     return NextResponse.json({ 
       message: 'Attendance verification email sent to HR',

@@ -2,7 +2,11 @@ import jwt, { type Secret } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
-const JWT_SECRET: Secret = (process.env.JWT_SECRET ?? 'your-secret-key') as Secret
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
+
+const JWT_SECRET: Secret = process.env.JWT_SECRET as Secret
 
 export interface AuthUser {
   id: string

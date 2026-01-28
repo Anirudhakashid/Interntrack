@@ -1,107 +1,109 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, LogOut, BookOpen, Building2, Users, TrendingUp, Download } from 'lucide-react'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts'
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
-// Dummy data
-const branchData = [
-  { branch: 'Computer Science', count: 45 },
-  { branch: 'Mechanical', count: 32 },
-  { branch: 'Electrical', count: 28 },
-  { branch: 'Civil', count: 22 },
-  { branch: 'Electronics', count: 18 }
-]
+const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
 
-const companyData = [
-  { company: 'Google', count: 12 },
-  { company: 'Microsoft', count: 10 },
-  { company: 'Amazon', count: 9 },
-  { company: 'Apple', count: 8 },
-  { company: 'Meta', count: 7 },
-  { company: 'IBM', count: 6 },
-  { company: 'Intel', count: 5 },
-  { company: 'Others', count: 88 }
-]
-
-const topCompanies = [
-  { company: 'Google', count: 12 },
-  { company: 'Microsoft', count: 10 },
-  { company: 'Amazon', count: 9 },
-  { company: 'Apple', count: 8 },
-  { company: 'Meta', count: 7 }
-]
-
-const branchCompanyData = [
-  { branch: 'Computer Science', Google: 8, Microsoft: 7, Amazon: 6, Apple: 5, Others: 19 },
-  { branch: 'Mechanical', Google: 2, Microsoft: 1, Amazon: 2, Apple: 2, Others: 25 },
-  { branch: 'Electrical', Google: 1, Microsoft: 1, Amazon: 1, Apple: 1, Others: 24 },
-  { branch: 'Civil', Google: 1, Microsoft: 1, Amazon: 0, Apple: 0, Others: 20 },
-  { branch: 'Electronics', Google: 0, Microsoft: 0, Amazon: 0, Apple: 0, Others: 18 }
-]
-
-const branchDetails: Record<string, { count: number; companies: Array<{ name: string; count: number }> }> = {
-  'Computer Science': { 
-    count: 45, 
-    companies: [
-      { name: 'Google', count: 8 },
-      { name: 'Microsoft', count: 7 },
-      { name: 'Amazon', count: 6 },
-      { name: 'Apple', count: 5 },
-      { name: 'Others', count: 19 }
-    ]
-  },
-  'Mechanical': { 
-    count: 32, 
-    companies: [
-      { name: 'Google', count: 2 },
-      { name: 'Microsoft', count: 1 },
-      { name: 'Amazon', count: 2 },
-      { name: 'Apple', count: 2 },
-      { name: 'Others', count: 25 }
-    ]
-  },
-  'Electrical': { 
-    count: 28, 
-    companies: [
-      { name: 'Google', count: 1 },
-      { name: 'Microsoft', count: 1 },
-      { name: 'Amazon', count: 1 },
-      { name: 'Apple', count: 1 },
-      { name: 'Others', count: 24 }
-    ]
-  },
-  'Civil': { 
-    count: 22, 
-    companies: [
-      { name: 'Google', count: 1 },
-      { name: 'Microsoft', count: 1 },
-      { name: 'Amazon', count: 0 },
-      { name: 'Apple', count: 0 },
-      { name: 'Others', count: 20 }
-    ]
-  },
-  'Electronics': { 
-    count: 18, 
-    companies: [
-      { name: 'Google', count: 0 },
-      { name: 'Microsoft', count: 0 },
-      { name: 'Amazon', count: 0 },
-      { name: 'Apple', count: 0 },
-      { name: 'Others', count: 18 }
-    ]
-  }
+// Branch color mapping
+const BRANCH_COLORS: Record<string, string> = {
+  'Computer Science': '#3b82f6',
+  'Mechanical': '#ef4444',
+  'Electrical': '#10b981',
+  'Civil': '#f59e0b',
+  'Electronics': '#8b5cf6',
+  'Chemical': '#ec4899',
+  'Aerospace': '#06b6d4',
+  'Biomedical': '#84cc16',
+  'Not Specified': '#9ca3af'
 }
 
-const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+interface AnalyticsData {
+  summary: {
+    totalApproved: number
+    uniqueBranches: number
+    uniqueCompanies: number
+  }
+  branchAnalytics: Array<{ branch: string; count: number }>
+  companyAnalytics: Array<{ company: string; count: number }>
+  topCompanies: Array<{ company: string; count: number }>
+  branchCompanyChartData: Array<Record<string, string | number>>
+  rawInternships: Array<{
+    id: string
+    companyName: string
+    student: { id: string; name: string; branch: string | null }
+  }>
+}
+
+// Custom tooltip for pie chart
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-2 border border-gray-300 rounded shadow-lg">
+        <p className="text-sm font-semibold">{payload[0].value}</p>
+      </div>
+    )
+  }
+  return null
+}
 
 export default function AnalyticsPage() {
   const router = useRouter()
   const [selectedBranch, setSelectedBranch] = useState('all')
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [allBranches, setAllBranches] = useState<string[]>([])
+
+  // Fetch analytics data from API
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch('/api/analytics', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        })
+        
+        const text = await response.text()
+        console.log('API Response status:', response.status)
+        console.log('API Response text:', text.substring(0, 200))
+        
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status} - ${text}`)
+        }
+        
+        const data: AnalyticsData = JSON.parse(text)
+        console.log('Parsed analytics data:', data)
+        setAnalyticsData(data)
+        
+        // Extract unique branches for the select dropdown (exclude "Not Specified")
+        const branches = data.branchAnalytics
+          .map(b => b.branch)
+          .filter(b => b !== 'Not Specified')
+          .sort()
+        setAllBranches(branches)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+        setError(errorMessage)
+        console.error('Error fetching analytics:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -110,6 +112,8 @@ export default function AnalyticsPage() {
   }
 
   const generateCSV = () => {
+    if (!analyticsData) return
+
     let csvContent = 'data:text/csv;charset=utf-8,'
 
     // Add header information
@@ -126,7 +130,7 @@ export default function AnalyticsPage() {
     // Add branch distribution
     csvContent += 'BRANCH DISTRIBUTION\n'
     csvContent += 'Branch,Number of Internships\n'
-    ;(filteredData?.branchDistribution || []).forEach((item: any) => {
+    ;(filteredData?.branchDistribution || []).forEach((item: { branch: string; count: number }) => {
       csvContent += `${item.branch},${item.count}\n`
     })
     csvContent += '\n'
@@ -134,25 +138,27 @@ export default function AnalyticsPage() {
     // Add company distribution
     csvContent += 'COMPANY DISTRIBUTION\n'
     csvContent += 'Company,Number of Internships\n'
-    ;(filteredData?.companyDistribution || []).forEach((item: any) => {
-      csvContent += `${item.name || item.company},${item.count}\n`
+    ;(filteredData?.companyDistribution || []).forEach((item: { company: string; count: number }) => {
+      csvContent += `${item.company},${item.count}\n`
     })
     csvContent += '\n'
 
     // Add top companies
     csvContent += 'TOP COMPANIES\n'
     csvContent += 'Rank,Company,Number of Interns\n'
-    ;(filteredData?.topCompanies || []).forEach((item: any, index: number) => {
-      csvContent += `${index + 1},${item.name || item.company},${item.count}\n`
+    ;(filteredData?.topCompanies || []).forEach((item: { company: string; count: number }, index: number) => {
+      csvContent += `${index + 1},${item.company},${item.count}\n`
     })
     csvContent += '\n'
 
     // Add branch-wise company distribution
     if (filteredData?.branchCompanyChart && filteredData.branchCompanyChart.length > 0) {
       csvContent += 'BRANCH-WISE COMPANY DISTRIBUTION\n'
-      csvContent += 'Branch,Google,Microsoft,Amazon,Apple,Others\n'
-      ;(filteredData?.branchCompanyChart || []).forEach((item: any) => {
-        csvContent += `${item.branch},${item.Google || 0},${item.Microsoft || 0},${item.Amazon || 0},${item.Apple || 0},${item.Others || 0}\n`
+      const branches = Object.keys(filteredData.branchCompanyChart[0] || {}).filter(k => k !== 'company')
+      csvContent += `Company,${branches.join(',')}\n`
+      ;(filteredData?.branchCompanyChart || []).forEach((item: Record<string, string | number>) => {
+        const values = branches.map(b => item[b] || 0)
+        csvContent += `${item.company},${values.join(',')}\n`
       })
     }
 
@@ -166,35 +172,62 @@ export default function AnalyticsPage() {
     document.body.removeChild(link)
   }
 
-  // Calculate filtered data
+  // Calculate filtered data based on selected branch
   const filteredData = useMemo(() => {
+    if (!analyticsData) return null
+
     if (selectedBranch === 'all') {
-      const totalInternships = branchData.reduce((sum, d) => sum + d.count, 0)
-      const filteredCompanies = companyData.map(c => ({ ...c }))
+      // Include all data
       return {
-        totalInternships,
-        uniqueBranches: branchData.length,
-        uniqueCompanies: companyData.length,
-        branchDistribution: branchData,
-        companyDistribution: companyData,
-        topCompanies: topCompanies,
-        branchCompanyChart: branchCompanyData
+        totalInternships: analyticsData.summary.totalApproved,
+        uniqueBranches: analyticsData.summary.uniqueBranches,
+        uniqueCompanies: analyticsData.summary.uniqueCompanies,
+        branchDistribution: analyticsData.branchAnalytics,
+        companyDistribution: analyticsData.companyAnalytics,
+        topCompanies: analyticsData.topCompanies,
+        branchCompanyChart: analyticsData.branchCompanyChartData
       }
     } else {
-      const branchInfo = branchDetails[selectedBranch]
-      if (!branchInfo) return null
+      // Filter for selected branch
+      const selectedBranchData = analyticsData.branchAnalytics.find(b => b.branch === selectedBranch)
+      const branchInternships = analyticsData.rawInternships.filter(
+        i => (i.student.branch || 'Not Specified') === selectedBranch
+      )
+      
+      // Get companies for this branch
+      const branchCompanies = new Map<string, number>()
+      branchInternships.forEach((internship: {
+        id: string
+        companyName: string
+        student: { id: string; name: string; branch: string | null }
+      }) => {
+        const company = internship.companyName
+        branchCompanies.set(company, (branchCompanies.get(company) || 0) + 1)
+      })
+      
+      const companyDistribution = Array.from(branchCompanies.entries())
+        .map(([company, count]) => ({ company, count }))
+        .sort((a, b) => b.count - a.count)
+
+      // Filter branchCompanyChart to only show companies that have the selected branch
+      const filteredChart = analyticsData.branchCompanyChartData
+        .filter(d => d[selectedBranch] !== undefined) // Only companies with this branch
+        .map(d => ({
+          company: d.company,
+          [selectedBranch]: d[selectedBranch]
+        }))
 
       return {
-        totalInternships: branchInfo.count,
+        totalInternships: selectedBranchData?.count || 0,
         uniqueBranches: 1,
-        uniqueCompanies: branchInfo.companies.length,
-        branchDistribution: [{ branch: selectedBranch, count: branchInfo.count }],
-        companyDistribution: branchInfo.companies,
-        topCompanies: branchInfo.companies.slice(0, 5),
-        branchCompanyChart: branchCompanyData.filter(d => d.branch === selectedBranch)
+        uniqueCompanies: companyDistribution.length,
+        branchDistribution: [{ branch: selectedBranch, count: selectedBranchData?.count || 0 }],
+        companyDistribution,
+        topCompanies: companyDistribution.slice(0, 5),
+        branchCompanyChart: filteredChart
       }
     }
-  }, [selectedBranch])
+  }, [analyticsData, selectedBranch])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -219,196 +252,233 @@ export default function AnalyticsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-start">
-          <Button 
-            variant="outline" 
-            onClick={() => router.back()}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto text-xs sm:text-sm order-1"
-          >
-            <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-            Back
-          </Button>
-          
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto order-3 sm:order-2">
-            <div className="w-full sm:w-56">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 block mb-1 sm:mb-2">Filter by Branch</label>
-              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                <SelectTrigger className="w-full text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Branches</SelectItem>
-                  <SelectItem value="Computer Science">Computer Science</SelectItem>
-                  <SelectItem value="Mechanical">Mechanical</SelectItem>
-                  <SelectItem value="Electrical">Electrical</SelectItem>
-                  <SelectItem value="Civil">Civil</SelectItem>
-                  <SelectItem value="Electronics">Electronics</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {loading && (
+          <div className="flex flex-col items-center justify-center min-h-96">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">Loading analytics data...</p>
           </div>
-
-          <Button 
-            onClick={generateCSV}
-            className="bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 w-full sm:w-auto text-xs sm:text-sm order-2 sm:order-3"
-          >
-            <Download className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Export</span> CSV
-          </Button>
-        </div>
-
-        {/* Summary Cards */}
-        {filteredData && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-gray-600">Total Internships</p>
-                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData.totalInternships}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-gray-600">Branches</p>
-                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData.uniqueBranches}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-gray-600">Companies</p>
-                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData.uniqueCompanies}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
         )}
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Branch Distribution */}
-          <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Student Distribution by Branch</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Internships per branch</CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 sm:p-6">
-              <div className="h-64 sm:h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={filteredData?.branchDistribution || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="branch" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800 font-medium">Error loading analytics</p>
+            <p className="text-red-700 text-sm mt-1">{error}</p>
+          </div>
+        )}
 
-          {/* Company Distribution Pie */}
-          <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Company Distribution</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Internships by company</CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 sm:p-6">
-              <div className="h-64 sm:h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={filteredData?.companyDistribution || []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, count }) => `${name}: ${count}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {(filteredData?.companyDistribution || []).map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        {!loading && !error && analyticsData && (
+          <>
+            <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-start">
+              <Button 
+                variant="outline" 
+                onClick={() => router.back()}
+                className="flex items-center justify-center gap-2 w-full sm:w-auto text-xs sm:text-sm order-1"
+              >
+                <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                Back
+              </Button>
+              
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto order-3 sm:order-2">
+                <div className="w-full sm:w-56">
+                  <label htmlFor="branch-select" className="text-xs sm:text-sm font-medium text-gray-700 block mb-1 sm:mb-2">Filter by Branch</label>
+                  <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                    <SelectTrigger className="w-full text-xs sm:text-sm" id="branch-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Branches</SelectItem>
+                      {allBranches.map(branch => (
+                        <SelectItem key={branch} value={branch}>
+                          {branch}
+                        </SelectItem>
                       ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Top Companies */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Top Companies</CardTitle>
-            <CardDescription>Companies with most internship placements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {(filteredData?.topCompanies || []).map((item: any, index: number) => (
-                <div key={item.name || item.company} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-semibold text-blue-600">
-                      {index + 1}
-                    </div>
-                    <span className="font-medium text-gray-900">{item.name || item.company}</span>
-                  </div>
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">
-                    {item.count}
-                  </span>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
 
-        {/* Branch-wise Company Distribution */}
-        <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-base sm:text-lg">Branch-wise Distribution</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Students per branch in top companies</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 sm:p-6">
-            <div className="h-64 sm:h-96 overflow-x-auto">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={filteredData?.branchCompanyChart || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="branch" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Google" fill="#3b82f6" />
-                  <Bar dataKey="Microsoft" fill="#ef4444" />
-                  <Bar dataKey="Amazon" fill="#10b981" />
-                  <Bar dataKey="Apple" fill="#f59e0b" />
-                  <Bar dataKey="Others" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
+              <Button 
+                onClick={generateCSV}
+                className="bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 w-full sm:w-auto text-xs sm:text-sm order-2 sm:order-3"
+              >
+                <Download className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Export</span> CSV
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+              <Card>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Total Internships</p>
+                      <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData?.totalInternships || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Branches</p>
+                      <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData?.uniqueBranches || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Companies</p>
+                      <p className="text-xl sm:text-3xl font-bold text-gray-900">{filteredData?.uniqueCompanies || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              {/* Branch Distribution */}
+              <Card>
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Student Distribution by Branch</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Internships per branch</CardDescription>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-6">
+                  <div className="h-64 sm:h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={filteredData?.branchDistribution || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="branch" angle={-45} textAnchor="end" height={80} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                          {(filteredData?.branchDistribution || []).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={BRANCH_COLORS[entry.branch] || '#9ca3af'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Company Distribution Donut */}
+              <Card>
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Company Distribution</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Internships by company</CardDescription>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-6">
+                  <div className="flex flex-col items-center">
+                    <div className="h-64 sm:h-80 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={filteredData?.companyDistribution || []}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={90}
+                            innerRadius={50}
+                            fill="#8884d8"
+                            dataKey="count"
+                            paddingAngle={2}
+                          >
+                            {(filteredData?.companyDistribution || []).map((entry: { company: string; count: number }, index: number) => (
+                              <Cell key={`${entry.company}-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomPieTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="w-full mt-4 grid grid-cols-2 gap-2">
+                      {(filteredData?.companyDistribution || []).slice(0, 6).map((entry: { company: string; count: number }, index: number) => (
+                        <div key={entry.company} className="flex items-center gap-2 text-xs sm:text-sm p-2 bg-gray-50 rounded-lg">
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                          <span className="truncate font-medium">{entry.company}</span>
+                          <span className="text-gray-600 flex-shrink-0">({entry.count})</span>
+                        </div>
+                      ))}
+                    </div>
+                    {(filteredData?.companyDistribution || []).length > 6 && (
+                      <p className="text-xs text-gray-500 mt-2">+{(filteredData?.companyDistribution || []).length - 6} more companies</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Companies */}
+            <Card className="mb-6 sm:mb-8">
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Top Companies</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Companies with most internship placements</CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 sm:p-6">
+                <div className="space-y-2 sm:space-y-3">
+                  {(filteredData?.topCompanies || []).map((item: { company: string; count: number }, index: number) => (
+                    <div key={item.company} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold text-blue-600 flex-shrink-0">
+                          {index + 1}
+                        </div>
+                        <span className="font-medium text-gray-900 truncate text-xs sm:text-base">{item.company}</span>
+                      </div>
+                      <span className="bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 rounded-full font-semibold text-xs sm:text-sm flex-shrink-0 ml-2">
+                        {item.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Branch-wise Company Distribution */}
+            {filteredData?.branchCompanyChart && filteredData.branchCompanyChart.length > 0 && (
+              <Card className="mb-6 sm:mb-8">
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">Branch-wise Distribution</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Students per branch by company</CardDescription>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-6">
+                  <div className="h-64 sm:h-96 w-full overflow-x-auto">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={300}>
+                      <BarChart data={filteredData.branchCompanyChart} margin={{ top: 20, right: 10, left: 0, bottom: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="company" angle={-45} textAnchor="end" height={100} interval={0} tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip />
+                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                        {Object.keys(filteredData.branchCompanyChart[0] || {})
+                          .filter(key => key !== 'company')
+                          .map((branch, index) => (
+                            <Bar key={branch} dataKey={branch} stackId="a" fill={BRANCH_COLORS[branch] || '#9ca3af'} />
+                          ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
       </main>
     </div>
   )

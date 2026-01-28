@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Development default login
     if (
-      process.env.NODE_ENV !== 'production' &&
+      process.env.NODE_ENV === 'development' &&
       email === 'admin' &&
       password === 'admin123'
     ) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       })
       response.cookies.set('auth-token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV?.toString() === 'production',
+        secure: (process.env.NODE_ENV as string) === 'production',
         sameSite: 'strict',
         maxAge: 60 * 60 * 24, // 24 hours
       })
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     })
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV?.toString() === 'production',
+      secure: (process.env.NODE_ENV as string) === 'production',
       sameSite: 'strict',
       maxAge: 60 * 60 * 24, // 24 hours
     })

@@ -1,90 +1,148 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Upload, Send } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Upload, Send, BookOpen, Layers } from "lucide-react";
 
 interface Teacher {
-  id: string
-  name: string
-  email: string
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface InternshipFormProps {
-  onSubmit: () => void
+  onSubmit: () => void;
 }
 
+const BRANCHES = [
+  "Computer Science",
+  "Mechanical",
+  "Electrical",
+  "Civil",
+  "Electronics",
+  "Chemical",
+  "Aerospace",
+  "Biomedical",
+];
+
+const DIVISIONS = ["A", "B", "C", "D"];
+
+const DEPARTMENT_COORDINATORS: Record<string, string> = {
+  "Computer Science": "coordinator.cs@college.edu",
+  Mechanical: "coordinator.mech@college.edu",
+  Electrical: "coordinator.electrical@college.edu",
+  Civil: "coordinator.civil@college.edu",
+  Electronics: "coordinator.electronics@college.edu",
+  Chemical: "coordinator.chemical@college.edu",
+  Aerospace: "coordinator.aerospace@college.edu",
+  Biomedical: "coordinator.biomedical@college.edu",
+};
+
 export function InternshipForm({ onSubmit }: InternshipFormProps) {
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
   const [formData, setFormData] = useState({
-    teacherId: '',
-    companyName: '',
-    offerLetterURL: '',
-    supervisorEmail: '',
-    hrEmail: '',
-  })
+    name: "",
+    class: "",
+    teacherId: "",
+    branch: "",
+    division: "",
+    companyName: "",
+    companyLocation: "",
+    domain: "",
+    durationWeeks: "",
+    startDate: "",
+    endDate: "",
+    stipend: "",
+    mode: "",
+    offerLetterURL: "",
+    deptCoordinatorEmail: "",
+    hrEmail: "",
+  });
 
   useEffect(() => {
-    fetchTeachers()
-  }, [])
+    fetchTeachers();
+  }, []);
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch('/api/users/teachers')
+      const response = await fetch("/api/users/teachers");
       if (response.ok) {
-        const data = await response.json()
-        setTeachers(data)
+        const data = await response.json();
+        setTeachers(data);
       }
     } catch (error) {
-      console.error('Failed to fetch teachers:', error)
+      console.error("Failed to fetch teachers:", error);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/internship-form', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/internship-form", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
-        setSuccess(true)
+        setSuccess(true);
         setFormData({
-          teacherId: '',
-          companyName: '',
-          offerLetterURL: '',
-          supervisorEmail: '',
-          hrEmail: '',
-        })
+          name: "",
+          class: "",
+          teacherId: "",
+          branch: "",
+          division: "",
+          companyName: "",
+          companyLocation: "",
+          domain: "",
+          durationWeeks: "",
+          startDate: "",
+          endDate: "",
+          stipend: "",
+          mode: "",
+          offerLetterURL: "",
+          deptCoordinatorEmail: "",
+          hrEmail: "",
+        });
         setTimeout(() => {
-          onSubmit()
-        }, 1500)
+          onSubmit();
+        }, 1500);
       } else {
-        const data = await response.json()
-        setError(data.error || 'Failed to submit form')
+        const data = await response.json();
+        setError(data.error || "Failed to submit form");
       }
     } catch (error) {
-      setError('Network error. Please try again.')
+      setError("Network error. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
@@ -94,12 +152,17 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Send className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Form Submitted Successfully!</h3>
-            <p className="text-gray-600">Your internship form has been sent to your academic teacher for approval.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Form Submitted Successfully!
+            </h3>
+            <p className="text-gray-600">
+              Your internship form has been sent to your academic teacher for
+              approval.
+            </p>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -120,13 +183,51 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="teacher">Academic Teacher *</Label>
-              <Select 
-                value={formData.teacherId} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, teacherId: value }))}
+              <Label htmlFor="name">Student Name *</Label>
+              <Input
+                id="name"
+                placeholder="Enter your full name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="class">Class/Year *</Label>
+              <Select
+                value={formData.class}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, class: value }))
+                }
+                required
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select your academic teacher" />
+                  <SelectValue placeholder="Select your class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FE">First Year (FE)</SelectItem>
+                  <SelectItem value="SE">Second Year (SE)</SelectItem>
+                  <SelectItem value="TE">Third Year (TE)</SelectItem>
+                  <SelectItem value="BE">Final Year (BE)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="teacher">
+                Internship Coordinator (Teacher) *
+              </Label>
+              <Select
+                value={formData.teacherId}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, teacherId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your internship coordinator" />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map((teacher) => (
@@ -139,14 +240,189 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="branch">Branch *</Label>
+              <div className="relative">
+                <BookOpen className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Select
+                  value={formData.branch}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      branch: value,
+                      deptCoordinatorEmail:
+                        DEPARTMENT_COORDINATORS[value] || "",
+                    }))
+                  }
+                  required
+                >
+                  <SelectTrigger className="pl-10">
+                    <SelectValue placeholder="Select your branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BRANCHES.map((b) => (
+                      <SelectItem key={b} value={b}>
+                        {b}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="division">Division *</Label>
+              <div className="relative">
+                <Layers className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Select
+                  value={formData.division}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, division: value }))
+                  }
+                  required
+                >
+                  <SelectTrigger className="pl-10">
+                    <SelectValue placeholder="Select your division" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIVISIONS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        Division {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="companyName">Company Name *</Label>
               <Input
                 id="companyName"
                 placeholder="Enter company name"
                 value={formData.companyName}
-                onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    companyName: e.target.value,
+                  }))
+                }
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyLocation">Company Location *</Label>
+              <Input
+                id="companyLocation"
+                placeholder="City, State/Country"
+                value={formData.companyLocation}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    companyLocation: e.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="domain">Internship Domain *</Label>
+              <Input
+                id="domain"
+                placeholder="e.g., Web Development, Data Science"
+                value={formData.domain}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, domain: e.target.value }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="durationWeeks">Duration (in weeks) *</Label>
+              <Input
+                id="durationWeeks"
+                type="number"
+                min="1"
+                placeholder="e.g., 8"
+                value={formData.durationWeeks}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    durationWeeks: e.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date *</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stipend">Stipend *</Label>
+              <Select
+                value={formData.stipend}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, stipend: value }))
+                }
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stipend type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mode">Internship Mode *</Label>
+              <Select
+                value={formData.mode}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, mode: value }))
+                }
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="hybrid">Hybrid</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -158,26 +434,38 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
                   type="url"
                   placeholder="https://drive.google.com/file/d/..."
                   value={formData.offerLetterURL}
-                  onChange={(e) => setFormData(prev => ({ ...prev, offerLetterURL: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      offerLetterURL: e.target.value,
+                    }))
+                  }
                   className="pl-10"
                   required
                 />
               </div>
               <p className="text-sm text-gray-500">
-                Upload your offer letter to Google Drive and paste the shareable link
+                Upload your offer letter to Google Drive and paste the shareable
+                link
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="supervisorEmail">Supervisor Email *</Label>
+              <Label htmlFor="deptCoordinatorEmail">
+                Department Coordinator Email *
+              </Label>
               <Input
-                id="supervisorEmail"
+                id="deptCoordinatorEmail"
                 type="email"
-                placeholder="supervisor@company.com"
-                value={formData.supervisorEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, supervisorEmail: e.target.value }))}
+                placeholder="Automatically filled based on branch"
+                value={formData.deptCoordinatorEmail}
+                readOnly
+                className="bg-gray-50"
                 required
               />
+              <p className="text-sm text-gray-500">
+                Auto-populated based on your selected branch
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -187,7 +475,9 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
                 type="email"
                 placeholder="hr@company.com"
                 value={formData.hrEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, hrEmail: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, hrEmail: e.target.value }))
+                }
                 required
               />
               <p className="text-sm text-gray-500">
@@ -203,11 +493,11 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
                 Submitting...
               </>
             ) : (
-              'Submit Form'
+              "Submit Form"
             )}
           </Button>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

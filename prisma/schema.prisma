@@ -16,6 +16,8 @@ model User {
   email     String   @unique
   password  String
   role      UserRole
+  branch    String?  // e.g., "Computer Science", "Mechanical", etc.
+  division  String?  // e.g., "A", "B", "C"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,16 +32,27 @@ model User {
 }
 
 model InternshipForm {
-  id               String             @id @default(cuid())
-  studentId        String
-  teacherId        String
-  companyName      String
-  offerLetterURL   String
-  supervisorEmail  String
-  hrEmail          String
-  status           InternshipStatus   @default(PENDING)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  id                 String             @id @default(cuid())
+  studentId          String
+  studentName        String?
+  studentClass       String?            // FE/SE/TE/BE
+  studentBranch      String?
+  studentDivision    String?
+  teacherId          String
+  companyName        String
+  companyLocation    String?
+  domain             String?
+  durationWeeks      Int?
+  startDate          DateTime?
+  endDate            DateTime?
+  stipend            String?            // paid/unpaid
+  mode               String?            // online/offline/hybrid
+  offerLetterURL     String
+  deptCoordinatorEmail String? @map("coordinatorEmail")
+  hrEmail            String
+  status             InternshipStatus   @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   student      User         @relation("StudentForms", fields: [studentId], references: [id], onDelete: Cascade)
   teacher      User         @relation("TeacherForms", fields: [teacherId], references: [id])
