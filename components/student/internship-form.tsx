@@ -22,6 +22,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Upload, Send, BookOpen, Layers } from "lucide-react";
+import { Value } from "@radix-ui/react-select";
 
 interface Teacher {
   id: string;
@@ -29,36 +30,24 @@ interface Teacher {
   email: string;
 }
 
+interface DepartmentCoordinator {
+  id: string;
+  branch: string;
+  email: string;
+  name: string;
+}
+
 interface InternshipFormProps {
   onSubmit: () => void;
 }
 
-const BRANCHES = [
-  "Computer Science",
-  "Mechanical",
-  "Electrical",
-  "Civil",
-  "Electronics",
-  "Chemical",
-  "Aerospace",
-  "Biomedical",
-];
-
 const DIVISIONS = ["A", "B", "C", "D"];
-
-const DEPARTMENT_COORDINATORS: Record<string, string> = {
-  "Computer Science": "coordinator.cs@college.edu",
-  Mechanical: "coordinator.mech@college.edu",
-  Electrical: "coordinator.electrical@college.edu",
-  Civil: "coordinator.civil@college.edu",
-  Electronics: "coordinator.electronics@college.edu",
-  Chemical: "coordinator.chemical@college.edu",
-  Aerospace: "coordinator.aerospace@college.edu",
-  Biomedical: "coordinator.biomedical@college.edu",
-};
 
 export function InternshipForm({ onSubmit }: InternshipFormProps) {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [deptCoordinators, setDeptCoordinators] = useState<
+    DepartmentCoordinator[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -84,6 +73,7 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
 
   useEffect(() => {
     fetchTeachers();
+    fetchDeptCoordinators();
   }, []);
 
   const fetchTeachers = async () => {
@@ -95,6 +85,37 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
       }
     } catch (error) {
       console.error("Failed to fetch teachers:", error);
+    }
+  };
+
+  const fetchDeptCoordinators = async () => {
+    try {
+      const response = await fetch("/api/dept-coordinator");
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.coordinators && Array.isArray(data.coordinators)) {
+          setDeptCoordinators(data.coordinators);
+        } else if (Array.isArray(data)) {
+          setDeptCoordinators(data);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch coordinators:", error);
+    }
+  };
+
+  const handleBranchChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, branch: value }));
+
+    //find coordinator for the selected branch
+    const deptCoordinator = deptCoordinators.find((c) => c.branch === value);
+    if (deptCoordinator) {
+      setFormData((prev) => ({
+        ...prev,
+        deptCoordinatorEmail: deptCoordinator.email,
+        deptCoordinatorId: deptCoordinator.id,
+      }));
     }
   };
 
@@ -143,6 +164,8 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
       setLoading(false);
     }
   };
+
+  const branches = deptCoordinators.map((c) => c.branch);
 
   if (success) {
     return (
@@ -245,21 +268,14 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
                 <BookOpen className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
                 <Select
                   value={formData.branch}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      branch: value,
-                      deptCoordinatorEmail:
-                        DEPARTMENT_COORDINATORS[value] || "",
-                    }))
-                  }
+                  onValueChange={handleBranchChange}
                   required
                 >
                   <SelectTrigger className="pl-10">
                     <SelectValue placeholder="Select your branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BRANCHES.map((b) => (
+                    {branches.map((b) => (
                       <SelectItem key={b} value={b}>
                         {b}
                       </SelectItem>
@@ -463,9 +479,6 @@ export function InternshipForm({ onSubmit }: InternshipFormProps) {
                 className="bg-gray-50"
                 required
               />
-              <p className="text-sm text-gray-500">
-                Auto-populated based on your selected branch
-              </p>
             </div>
 
             <div className="space-y-2">

@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormApproval } from "@/components/teacher/form-approval";
 import { AuditLogs } from "@/components/teacher/audit-logs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ManageDeptCoordinators } from "@/components/teacher/manage-deptCoordinator";
 import {
   BookOpen,
   FileText,
@@ -23,6 +24,7 @@ import {
   Activity,
   LogOut,
   BarChart3,
+  Users,
 } from "lucide-react";
 
 interface InternshipFormData {
@@ -120,7 +122,7 @@ export default function TeacherDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="approvals">
               Approvals
@@ -132,6 +134,10 @@ export default function TeacherDashboard() {
             </TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+            <TabsTrigger value="deptcoordinators">
+              {" "}
+              Department Coordinators{" "}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -365,6 +371,16 @@ export default function TeacherDashboard() {
               <h2 className="text-2xl font-bold text-gray-900">Audit Logs</h2>
             </div>
             <AuditLogs forms={forms} />
+          </TabsContent>
+
+          <TabsContent value="deptcoordinators" className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Users className="w-6 h-6 text-blue-600" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Department Coordinators
+              </h2>
+            </div>
+            <ManageDeptCoordinators />
           </TabsContent>
         </Tabs>
       </main>
