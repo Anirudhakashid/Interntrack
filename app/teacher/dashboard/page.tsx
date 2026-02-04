@@ -11,10 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { FormApproval } from "@/components/teacher/form-approval";
 import { AuditLogs } from "@/components/teacher/audit-logs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ManageDeptCoordinators } from "@/components/teacher/manage-deptCoordinator";
+import { EmailReportsInfo } from "@/components/teacher/email-reports-info";
 import {
   BookOpen,
   FileText,
@@ -25,6 +33,8 @@ import {
   LogOut,
   BarChart3,
   Users,
+  Mail,
+  Menu,
 } from "lucide-react";
 
 interface InternshipFormData {
@@ -52,7 +62,21 @@ interface InternshipFormData {
 export default function TeacherDashboard() {
   const [forms, setForms] = useState<InternshipFormData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const [canViewReports, setCanViewReports] = useState(false);
+
+  useEffect(() => {
+    const enabled = process.env.NEXT_PUBLIC_ENABLE_REPORTS as string | undefined;
+    setCanViewReports(enabled === undefined ? true : enabled === "true");
+  }, []);
+
+  useEffect(() => {
+    if (!canViewReports && activeTab === "reports") {
+      setActiveTab("overview");
+    }
+  }, [canViewReports, activeTab]);
 
   useEffect(() => {
     fetchForms();
@@ -121,24 +145,164 @@ export default function TeacherDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="approvals">
-              Approvals
-              {stats.pending > 0 && (
-                <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  {stats.pending}
-                </span>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
+          {/* Desktop Tabs */}
+          <div className="hidden md:block">
+            <TabsList className="grid w-full grid-cols-6 gap-1 h-auto p-1">
+              <TabsTrigger
+                value="overview"
+                className="text-xs sm:text-sm truncate"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="approvals"
+                className="text-xs sm:text-sm truncate"
+              >
+                Approvals
+                {stats.pending > 0 && (
+                  <span className="ml-1 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {stats.pending}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="students"
+                className="text-xs sm:text-sm truncate"
+              >
+                Students
+              </TabsTrigger>
+              <TabsTrigger
+                value="audit"
+                className="text-xs sm:text-sm truncate"
+              >
+                Logs
+              </TabsTrigger>
+              <TabsTrigger
+                value="deptcoordinators"
+                className="text-xs sm:text-sm truncate"
+              >
+                Coordinators
+              </TabsTrigger>
+              {canViewReports && (
+                <TabsTrigger
+                  value="reports"
+                  className="text-xs sm:text-sm truncate"
+                >
+                  Reports
+                </TabsTrigger>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
-            <TabsTrigger value="deptcoordinators">
-              {" "}
-              Department Coordinators{" "}
-            </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
+
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                  <Menu className="w-4 h-4 mr-2" />
+                  Menu
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64">
+                <SheetTitle className="sr-only">Teacher menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Navigate between dashboard sections.
+                </SheetDescription>
+                <nav className="space-y-2 mt-8">
+                  <button
+                    onClick={() => {
+                      setActiveTab("overview");
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "overview"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("approvals");
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
+                      activeTab === "approvals"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Approvals
+                    {stats.pending > 0 && (
+                      <span className="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">
+                        {stats.pending}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("students");
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "students"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Students
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("audit");
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "audit"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Audit Logs
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("deptcoordinators");
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === "deptcoordinators"
+                        ? "bg-blue-100 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    Coordinators
+                  </button>
+                  {canViewReports && (
+                    <button
+                      onClick={() => {
+                        setActiveTab("reports");
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        activeTab === "reports"
+                          ? "bg-blue-100 text-blue-700"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Email Reports
+                    </button>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="flex justify-end mb-4">
@@ -382,6 +546,18 @@ export default function TeacherDashboard() {
             </div>
             <ManageDeptCoordinators />
           </TabsContent>
+
+          {canViewReports && (
+            <TabsContent value="reports" className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Mail className="w-6 h-6 text-blue-600" />
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Automated Email Reports
+                </h2>
+              </div>
+              <EmailReportsInfo />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
