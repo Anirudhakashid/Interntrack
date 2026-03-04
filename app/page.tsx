@@ -7,12 +7,6 @@ import {
   ClipboardList,
   Mail,
   MapPin,
-  Lock,
-  Clock,
-  CreditCard,
-  Map,
-  BarChart3,
-  FileText,
   UserCircle,
   ArrowRight,
 } from "lucide-react";
@@ -206,41 +200,217 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STRIP ── */}
-      <div className="border-t border-b border-[#e8eaed] bg-white py-5 px-8 overflow-hidden">
-        <div className="flex items-center justify-center gap-12 max-w-[1280px] mx-auto flex-wrap">
-          {[
-            {
-              icon: <Lock className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "Secure & encrypted",
-            },
-            {
-              icon: <Clock className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "Real-time tracking",
-            },
-            {
-              icon: <CreditCard className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "Email integration",
-            },
-            {
-              icon: <Map className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "IP-based location",
-            },
-            {
-              icon: <BarChart3 className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "Full audit logs",
-            },
-            {
-              icon: <FileText className="w-4 h-4 text-[#b8bcc6]" />,
-              text: "No hardware needed",
-            },
-          ].map((item) => (
-            <div
-              key={item.text}
-              className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap"
-            >
-              {item.icon}
-              {item.text}
+      {/* ── STRIP — scrolling marquee ── */}
+      <div className="border-t border-b border-[#e8eaed] bg-white py-4 overflow-hidden">
+        <div className="strip-inner flex w-max gap-10">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex gap-10 shrink-0">
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <path
+                    d="M7 1L12.5 3.5v4C12.5 10.5 10 12.5 7 13 4 12.5 1.5 10.5 1.5 7.5v-4L7 1z"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Secure &amp; encrypted
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="5.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M7 4v3.5l2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Real-time tracking
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <rect
+                    x="1.5"
+                    y="3.5"
+                    width="11"
+                    height="7"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M1.5 6.5l5.5 3 5.5-3"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Email integration
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <path
+                    d="M7 1.5C4.5 1.5 2.5 3.5 2.5 6c0 3.5 4.5 6.5 4.5 6.5S11.5 9.5 11.5 6c0-2.5-2-4.5-4.5-4.5z"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <circle
+                    cx="7"
+                    cy="6"
+                    r="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                </svg>
+                IP-based location
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <path
+                    d="M2 11L4.5 5l3 4.5L10 7l2 4"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Full audit logs
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <rect
+                    x="3"
+                    y="1.5"
+                    width="8"
+                    height="11"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M5 5h4M5 7.5h4M5 10h2"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                No hardware needed
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <rect
+                    x="1.5"
+                    y="3"
+                    width="11"
+                    height="8"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M5 3V2M9 3V2M1.5 6h11"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                30-min setup
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <circle
+                    cx="7"
+                    cy="7"
+                    r="5.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M5 7l1.5 1.5L9 5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Teacher approvals
+              </div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[#878c97] whitespace-nowrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="text-[#b8bcc6]"
+                >
+                  <rect
+                    x="4"
+                    y="1"
+                    width="6"
+                    height="12"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  />
+                  <circle cx="7" cy="11" r="0.75" fill="currentColor" />
+                </svg>
+                Mobile friendly
+              </div>
             </div>
           ))}
         </div>
@@ -430,40 +600,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* ── CTA ── */}
-      <div className="reveal px-8 pb-[88px]">
-        <div className="max-w-[1280px] mx-auto bg-[#111318] rounded-[20px] px-8 sm:px-14 py-16 flex flex-col sm:flex-row items-center justify-between gap-10 relative overflow-hidden">
-          <div className="absolute -top-[60px] -right-[60px] w-[200px] h-[200px] rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.3),transparent_70%)] pointer-events-none" />
-          <div className="absolute -bottom-10 left-[30%] w-[140px] h-[140px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.04),transparent_70%)] pointer-events-none" />
-          <div>
-            <h2 className="text-[clamp(1.6rem,3.5vw,2.25rem)] font-bold tracking-[-0.03em] text-white mb-3 leading-tight">
-              Ready to streamline your
-              <br />
-              internship program?
-            </h2>
-            <p className="text-base text-white/50 leading-relaxed max-w-[440px]">
-              Get started in minutes. No technical team required. No hardware
-              needed.
-            </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Link
-              href="/student/login"
-              className="inline-flex items-center gap-2 bg-white text-[#111318] text-base font-semibold px-6 h-12 rounded-xl hover:bg-gray-100 transition-all no-underline"
-            >
-              Student Portal
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/teacher/login"
-              className="inline-flex items-center gap-2 bg-white/[.08] text-white/80 text-base font-medium px-6 h-12 rounded-xl border border-white/[.12] hover:bg-white/[.13] transition-all no-underline"
-            >
-              Teacher Portal
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-[#e8eaed] bg-white px-8 py-6 flex flex-col sm:flex-row items-center justify-between flex-wrap gap-3">

@@ -122,3 +122,21 @@
 .reveal.delay-3 {
   transition-delay: 0.24s;
 }
+
+/* Marquee strip */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.strip-inner {
+  animation: marquee 30s linear infinite;
+}
+
+.strip-inner:hover {
+  animation-play-state: paused;
+}
