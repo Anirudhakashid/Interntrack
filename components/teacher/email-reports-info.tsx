@@ -20,7 +20,7 @@ export function EmailReportsInfo() {
   const scheduleInfo = {
     frequency: "Every 15 days",
     dates: "1st and 16th of each month",
-    time: "09:00 AM UTC",
+    time: "09:00 AM IST",
     format: "CSV attachment",
     includes: [
       "Student names and emails",

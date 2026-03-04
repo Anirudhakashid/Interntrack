@@ -3,12 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, generateTeacherReportEmail } from "@/lib/email";
 import { verifyToken } from "@/lib/auth";
 
-export async function POST(req: NextRequest) {
+async function handleAttendanceReport(req: NextRequest) {
   try {
+    console.log(
+      `[Cron] Attendance report triggered via ${req.method} at ${new Date().toISOString()}`,
+    );
+
     //verify the request from the cron job
     const authToken = req.headers.get("Authorization");
     const cronHeader = req.headers.get("x-cron-secret");
     const cronSecret = process.env.CRON_SECRET;
+
+    console.log(
+      `[Cron] Auth check — cronSecret set: ${!!cronSecret}, authToken present: ${!!authToken}, cronHeader present: ${!!cronHeader}`,
+    );
 
     const isCronAuthorized =
       !!cronSecret &&
@@ -22,6 +30,10 @@ export async function POST(req: NextRequest) {
         isTeacherAuthorized = user?.role === "TEACHER";
       }
     }
+
+    console.log(
+      `[Cron] Authorization result — cron: ${isCronAuthorized}, teacher: ${isTeacherAuthorized}`,
+    );
 
     if (!isCronAuthorized && !isTeacherAuthorized) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -143,4 +155,14 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+// Vercel Crons send GET requests
+export async function GET(req: NextRequest) {
+  return handleAttendanceReport(req);
+}
+
+// Keep POST for manual teacher-triggered reports
+export async function POST(req: NextRequest) {
+  return handleAttendanceReport(req);
 }
