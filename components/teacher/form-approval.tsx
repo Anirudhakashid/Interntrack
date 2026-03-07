@@ -23,6 +23,7 @@ import {
 interface InternshipForm {
   id: string;
   companyName: string;
+  studentName?: string | null;
   offerLetterURL: string;
   deptCoordinatorEmail: string;
   hrEmail: string;
@@ -38,7 +39,7 @@ interface InternshipForm {
   studentDivision?: string;
   status: string;
   createdAt: string;
-  student: { name: string; email: string };
+  student?: { name?: string | null; email?: string | null } | null;
 }
 
 interface FormApprovalProps {
@@ -49,6 +50,12 @@ interface FormApprovalProps {
 export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
   const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
+
+  const getStudentName = (form: InternshipForm) =>
+    form.studentName || form.student?.name || "Unknown Student";
+
+  const getStudentEmail = (form: InternshipForm) =>
+    form.student?.email || "No email";
 
   const handleStatusChange = async (
     formId: string,
@@ -115,7 +122,7 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
                   {form.companyName}
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Student: {form.student.name} ({form.student.email})
+                  Student: {getStudentName(form)} ({getStudentEmail(form)})
                 </CardDescription>
               </div>
               <Badge className="bg-yellow-100 text-yellow-800">
@@ -131,7 +138,7 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
                     Student Details
                   </label>
                   <p className="text-sm text-gray-900 mt-1">
-                    {form.student.name} ({form.student.email})
+                    {getStudentName(form)} ({getStudentEmail(form)})
                   </p>
                   <p className="text-sm text-gray-600">
                     {form.studentClass || ""}

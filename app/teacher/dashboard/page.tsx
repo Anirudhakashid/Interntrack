@@ -40,6 +40,7 @@ import {
 interface InternshipFormData {
   id: string;
   companyName: string;
+  studentName?: string | null;
   offerLetterURL?: string;
   deptCoordinatorEmail?: string;
   hrEmail?: string;
@@ -55,8 +56,8 @@ interface InternshipFormData {
   studentDivision?: string;
   status: string;
   createdAt: string;
-  student: { name: string; email: string };
-  attendances: any[];
+  student?: { name?: string | null; email?: string | null } | null;
+  attendances?: any[];
 }
 
 export default function TeacherDashboard() {
@@ -68,7 +69,9 @@ export default function TeacherDashboard() {
   const [canViewReports, setCanViewReports] = useState(false);
 
   useEffect(() => {
-    const enabled = process.env.NEXT_PUBLIC_ENABLE_REPORTS as string | undefined;
+    const enabled = process.env.NEXT_PUBLIC_ENABLE_REPORTS as
+      | string
+      | undefined;
     setCanViewReports(enabled === undefined ? true : enabled === "true");
   }, []);
 
@@ -107,8 +110,15 @@ export default function TeacherDashboard() {
     pending: forms.filter((f) => f.status === "PENDING").length,
     approved: forms.filter((f) => f.status === "APPROVED").length,
     rejected: forms.filter((f) => f.status === "REJECTED").length,
-    totalAttendance: forms.reduce((sum, f) => sum + f.attendances.length, 0),
+    totalAttendance: forms.reduce(
+      (sum, f) =>
+        sum + (Array.isArray(f.attendances) ? f.attendances.length : 0),
+      0,
+    ),
   };
+
+  const getStudentName = (form: InternshipFormData) =>
+    form.studentName || form.student?.name || "Unknown Student";
 
   if (loading) {
     return (
@@ -428,7 +438,7 @@ export default function TeacherDashboard() {
                       >
                         <div>
                           <p className="font-medium text-gray-900">
-                            {form.student.name} - {form.companyName}
+                            {getStudentName(form)} - {form.companyName}
                           </p>
                           <p className="text-sm text-gray-600">
                             Submitted{" "}
@@ -500,7 +510,7 @@ export default function TeacherDashboard() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>{form.student.name}</CardTitle>
+                        <CardTitle>{getStudentName(form)}</CardTitle>
                         <CardDescription>
                           {form.companyName} •{" "}
                           {new Date(form.createdAt).toLocaleDateString()}
@@ -521,7 +531,10 @@ export default function TeacherDashboard() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-gray-600">
-                      Attendance records: {form.attendances.length}
+                      Attendance records:{" "}
+                      {Array.isArray(form.attendances)
+                        ? form.attendances.length
+                        : 0}
                     </p>
                   </CardContent>
                 </Card>
