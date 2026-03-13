@@ -35,7 +35,6 @@ export default function AnalyticsPage() {
     setModeFilter,
     allBranches,
     paidPercent,
-    topMode,
     generateCSV,
     handleLogout,
   } = useAnalyticsData();
@@ -86,15 +85,6 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        {error && (
-          <div className="py-10">
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-              <p className="text-red-600 font-semibold">Error loading analytics</p>
-              <p className="text-red-500 text-sm mt-1">{error}</p>
-            </div>
-          </div>
-        )}
-
         {!loading && !error && filteredData && (
           <>
             {/* Key Metrics */}
@@ -103,7 +93,6 @@ export default function AnalyticsPage() {
               <MetricCards
                 filteredData={filteredData}
                 paidPercent={paidPercent}
-                topMode={topMode}
               />
             </section>
 

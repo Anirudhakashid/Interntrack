@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const todayStart = (value: Date) =>
+  new Date(value.getFullYear(), value.getMonth(), value.getDate());
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -31,14 +34,54 @@ export async function PATCH(
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    const updatedForm = await prisma.internshipForm.update({
-      where: { id: params.id },
-      data: { status },
-      include: {
-        student: { select: { name: true, email: true } },
-        teacher: { select: { name: true, email: true } },
-      },
-    });
+    let updatedForm;
+
+    if (status === "APPROVED") {
+      const today = todayStart(new Date());
+      const start = form.startDate
+        ? todayStart(new Date(form.startDate))
+        : null;
+      const end = form.endDate ? todayStart(new Date(form.endDate)) : null;
+
+      // Active only when internship has started and not ended.
+      const shouldBeActive = !!start && !!end && today >= start && today <= end;
+
+      updatedForm = await prisma.$transaction(async (tx) => {
+        // Keep only one active internship per student.
+        if (shouldBeActive) {
+          await tx.internshipForm.updateMany({
+            where: {
+              studentId: form.studentId,
+              isActive: true,
+            },
+            data: { isActive: false },
+          });
+        }
+        return tx.internshipForm.update({
+          where: { id: params.id },
+          data: {
+            status: "APPROVED",
+            isActive: shouldBeActive,
+          },
+          include: {
+            student: { select: { name: true, email: true } },
+            teacher: { select: { name: true, email: true } },
+          },
+        });
+      });
+    } else {
+      updatedForm = await prisma.internshipForm.update({
+        where: { id: params.id },
+        data: {
+          status: "REJECTED",
+          isActive: false,
+        },
+        include: {
+          student: { select: { name: true, email: true } },
+          teacher: { select: { name: true, email: true } },
+        },
+      });
+    }
 
     return NextResponse.json(updatedForm);
   } catch (error) {

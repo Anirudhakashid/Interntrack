@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export function ChartTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     return (
@@ -55,6 +54,14 @@ export function ChartLegend({
           {item.label}
         </div>
       ))}
+    </div>
+  );
+}
+
+export function NoChartData({ message }: { message: string }) {
+  return (
+    <div className="h-[180px] flex items-center justify-center text-center">
+      <p className="text-sm text-[#878c97]">{message}</p>
     </div>
   );
 }

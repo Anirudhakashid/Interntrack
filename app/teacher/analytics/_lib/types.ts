@@ -4,6 +4,15 @@ export interface StipendAnalytics {
   unknown: number;
 }
 
+export interface StipendAmountAnalytics {
+  average: number | null;
+  min: number | null;
+  max: number | null;
+  total: number;
+  count: number;
+  distribution: Array<{ range: string; count: number }>;
+}
+
 export interface ModeAnalytics {
   online: number;
   offline: number;
@@ -29,11 +38,13 @@ export interface RawInternship {
   companyLocation: string | null;
   domain: string | null;
   stipend: string | null;
+  stipendAmount: number | null;
   mode: string | null;
   durationWeeks: number | null;
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  studentBranch: string | null;
   student: { id: string; name: string; branch: string | null };
 }
 
@@ -55,6 +66,7 @@ export interface AnalyticsData {
   topCompanies: Array<{ company: string; count: number }>;
   branchCompanyChartData: Array<Record<string, string | number>>;
   stipendAnalytics: StipendAnalytics;
+  stipendAmountAnalytics: StipendAmountAnalytics;
   modeAnalytics: ModeAnalytics;
   durationAnalytics: DurationAnalytics;
   yearAnalytics: YearAnalytics[];
@@ -75,6 +87,7 @@ export interface FilteredData {
   topCompanies: Array<{ company: string; count: number }>;
   branchCompanyChart: Array<Record<string, string | number>>;
   stipendAnalytics: StipendAnalytics;
+  stipendAmountAnalytics: StipendAmountAnalytics;
   modeAnalytics: ModeAnalytics;
   durationAnalytics: DurationAnalytics;
   yearAnalytics: YearAnalytics[];

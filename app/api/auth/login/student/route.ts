@@ -1,57 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { authenticateUser, generateToken } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { authenticateUser, generateToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password } = await request.json();
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+        { error: "Email and password are required" },
+        { status: 400 },
+      );
     }
 
     // Development default login
     if (
-      process.env.NODE_ENV === 'development' &&
-      email === 'admin' &&
-      password === 'admin123'
+      process.env.NODE_ENV === "development" &&
+      email === "admin" &&
+      password === "admin123"
     ) {
       const devUser = {
-        id: 'dev-student',
-        name: 'Dev Student',
-        email: 'admin',
-        role: 'STUDENT',
-      }
+        id: "dev-student",
+        name: "Dev Student",
+        email: "admin",
+        role: "STUDENT",
+      };
       const token = generateToken({
         id: devUser.id,
+        name: devUser.name,
         email: devUser.email,
         role: devUser.role,
-      })
+      });
       const response = NextResponse.json({
         user: devUser,
-      })
-      response.cookies.set('auth-token', token, {
+      });
+      response.cookies.set("auth-token", token, {
         httpOnly: true,
-        secure: (process.env.NODE_ENV as string) === 'production',
-        sameSite: 'strict',
+        secure: (process.env.NODE_ENV as string) === "production",
+        sameSite: "strict",
         maxAge: 60 * 60 * 24, // 24 hours
-      })
-      return response
+      });
+      return response;
     }
 
-    const user = await authenticateUser(email, password, 'STUDENT')
+    const user = await authenticateUser(email, password, "STUDENT");
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
+        { error: "Invalid email or password" },
+        { status: 401 },
+      );
     }
     const token = generateToken({
       id: user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
-    })
+    });
     const response = NextResponse.json({
       user: {
         id: user.id,
@@ -59,19 +61,19 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
       },
-    })
-    response.cookies.set('auth-token', token, {
+    });
+    response.cookies.set("auth-token", token, {
       httpOnly: true,
-      secure: (process.env.NODE_ENV as string) === 'production',
-      sameSite: 'strict',
+      secure: (process.env.NODE_ENV as string) === "production",
+      sameSite: "strict",
       maxAge: 60 * 60 * 24, // 24 hours
-    })
-    return response
+    });
+    return response;
   } catch (error) {
-    console.error('Student login error:', error)
+    console.error("Student login error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

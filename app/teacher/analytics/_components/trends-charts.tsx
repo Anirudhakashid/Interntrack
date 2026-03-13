@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { ChartTooltip } from "./chart-tooltip";
+import { ChartTooltip, NoChartData } from "./chart-tooltip";
 import { COLORS, PALETTE } from "../_lib/constants";
 import type { FilteredData } from "../_lib/types";
 
@@ -45,6 +45,11 @@ export function TrendsCharts({ filteredData }: TrendsChartsProps) {
     COLORS.cyan,
   ];
 
+  const hasYearData = filteredData.yearAnalytics.length > 0;
+  const hasDurationData = durationBarData.some((item) => item.count > 0);
+  const hasDomainTrendData =
+    filteredData.domainTrends.length > 0 && filteredData.domainTrendKeys.length > 0;
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
@@ -58,49 +63,53 @@ export function TrendsCharts({ filteredData }: TrendsChartsProps) {
               Total internships placed each academic year
             </div>
           </div>
-          <div className="h-[200px] mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={filteredData.yearAnalytics}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="5%"
-                      stopColor={COLORS.blue}
-                      stopOpacity={0.15}
-                    />
-                    <stop offset="95%" stopColor={COLORS.blue} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: 13 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 13 }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke={COLORS.blue}
-                  fill="url(#colorCount)"
-                  strokeWidth={2.5}
-                  dot={{
-                    fill: "#fff",
-                    stroke: COLORS.blue,
-                    strokeWidth: 2,
-                    r: 4,
-                  }}
-                  activeDot={{ r: 5, fill: COLORS.blue }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {hasYearData ? (
+            <div className="h-[200px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={filteredData.yearAnalytics}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor={COLORS.blue}
+                        stopOpacity={0.15}
+                      />
+                      <stop offset="95%" stopColor={COLORS.blue} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke={COLORS.blue}
+                    fill="url(#colorCount)"
+                    strokeWidth={2.5}
+                    dot={{
+                      fill: "#fff",
+                      stroke: COLORS.blue,
+                      strokeWidth: 2,
+                      r: 4,
+                    }}
+                    activeDot={{ r: 5, fill: COLORS.blue }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <NoChartData message="No year-wise data available for the current filters" />
+          )}
         </div>
 
         {/* Duration Distribution */}
@@ -113,47 +122,51 @@ export function TrendsCharts({ filteredData }: TrendsChartsProps) {
               Internship length in weeks
             </div>
           </div>
-          <div className="h-[200px] mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={durationBarData}>
-                <XAxis
-                  dataKey="range"
-                  tick={{ fontSize: 13 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 13 }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                  {durationBarData.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={durationBarColors[i % durationBarColors.length]}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasDurationData ? (
+            <div className="h-[200px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={durationBarData}>
+                  <XAxis
+                    dataKey="range"
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {durationBarData.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={durationBarColors[i % durationBarColors.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <NoChartData message="No duration data available for the current filters" />
+          )}
         </div>
       </div>
 
       {/* Domain Trends over Time */}
-      {filteredData.domainTrends.length > 0 && filteredData.domainTrendKeys.length > 0 && (
-        <div className="bg-white border border-[#e8eaed] rounded-[14px] p-5 transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-          <div className="mb-1">
-            <div className="text-base font-semibold text-[#111318] tracking-[-0.01em]">
-              Domain Trends
-            </div>
-            <div className="text-sm text-[#878c97] mt-0.5">
-              How top internship domains have trended across academic years
-            </div>
+      <div className="bg-white border border-[#e8eaed] rounded-[14px] p-5 transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        <div className="mb-1">
+          <div className="text-base font-semibold text-[#111318] tracking-[-0.01em]">
+            Domain Trends
           </div>
+          <div className="text-sm text-[#878c97] mt-0.5">
+            How top internship domains have trended across academic years
+          </div>
+        </div>
+        {hasDomainTrendData ? (
           <div className="h-[260px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={filteredData.domainTrends}>
@@ -222,8 +235,10 @@ export function TrendsCharts({ filteredData }: TrendsChartsProps) {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      )}
+        ) : (
+          <NoChartData message="No domain trend data available for the current filters" />
+        )}
+      </div>
     </div>
   );
 }

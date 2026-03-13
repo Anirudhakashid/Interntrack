@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
 import {
   CheckCircle,
   XCircle,
@@ -33,6 +33,7 @@ interface InternshipForm {
   startDate?: string;
   endDate?: string;
   stipend?: string;
+  stipendAmount?: number | null;
   mode?: string;
   studentClass?: string;
   studentBranch?: string;
@@ -49,7 +50,6 @@ interface FormApprovalProps {
 
 export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
   const [loading, setLoading] = useState("");
-  const [error, setError] = useState("");
 
   const getStudentName = (form: InternshipForm) =>
     form.studentName || form.student?.name || "Unknown Student";
@@ -61,7 +61,6 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
     formId: string,
     status: "APPROVED" | "REJECTED",
   ) => {
-    setError("");
     setLoading(formId);
 
     try {
@@ -72,13 +71,15 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
       });
 
       if (response.ok) {
+        toast.success(`The internship form has been ${status.toLowerCase()}.`);
         onStatusChange();
       } else {
         const data = await response.json();
-        setError(data.error || "Failed to update status");
+        const msg = data.error || "Failed to update status";
+        toast.error(msg);
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      toast.error("Network error. Please try again.");
     } finally {
       setLoading("");
     }
@@ -106,12 +107,6 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
 
   return (
     <div className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       {pendingForms.map((form) => (
         <Card key={form.id} className="border-yellow-200">
           <CardHeader className="bg-yellow-50">
@@ -131,7 +126,7 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-700">
@@ -156,9 +151,14 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
                       Mode / Stipend
                     </label>
                     <p className="text-sm text-gray-900 mt-1">
-                      {form.mode || "-"}{" "}
-                      {form.stipend ? `• ${form.stipend}` : ""}
+                      {form.mode || "-"}
+                      {form.stipend ? ` • ${form.stipend}` : ""}
                     </p>
+                    {form.stipend === "paid" && form.stipendAmount != null && (
+                      <p className="text-xs text-gray-500">
+                        INR {form.stipendAmount.toLocaleString("en-IN")} / month
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500">
                       Duration: {form.durationWeeks || "-"} weeks
                     </p>
@@ -209,9 +209,7 @@ export function FormApproval({ forms, onStatusChange }: FormApprovalProps) {
                   </label>
                   <div className="flex items-center gap-2 mt-1">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-900">
-                      {form.hrEmail}
-                    </span>
+                    <span className="text-sm text-gray-900">{form.hrEmail}</span>
                   </div>
                 </div>
                 <div>

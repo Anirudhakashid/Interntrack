@@ -12,7 +12,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChartTooltip, PieTooltip, ChartLegend } from "./chart-tooltip";
+import {
+  ChartTooltip,
+  PieTooltip,
+  ChartLegend,
+  NoChartData,
+} from "./chart-tooltip";
 import { PALETTE, BRANCH_COLORS } from "../_lib/constants";
 import type { FilteredData } from "../_lib/types";
 
@@ -35,6 +40,16 @@ export function InsightsCharts({ filteredData }: InsightsChartsProps) {
     return filteredData.domainDistribution.slice(0, 8);
   }, [filteredData.domainDistribution]);
 
+  const domainChartHeight = Math.max(domainBarData.length * 36, 180);
+  const domainAxisWidth = useMemo(() => {
+    const longestDomain = domainBarData.reduce(
+      (max, item) => Math.max(max, item.domain.length),
+      0,
+    );
+
+    return Math.min(Math.max(longestDomain * 7, 110), 180);
+  }, [domainBarData]);
+
   const locationColors = [
     "#2563eb",
     "#16a34a",
@@ -43,6 +58,9 @@ export function InsightsCharts({ filteredData }: InsightsChartsProps) {
     "#0891b2",
     "#e5e7eb",
   ];
+
+  const hasLocationData = locationDonutData.length > 0;
+  const hasDomainData = domainBarData.length > 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -56,35 +74,41 @@ export function InsightsCharts({ filteredData }: InsightsChartsProps) {
             Geographic distribution of internships
           </div>
         </div>
-        <div className="h-[180px] flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={locationDonutData}
-                cx="50%"
-                cy="50%"
-                innerRadius="55%"
-                outerRadius="85%"
-                dataKey="value"
-                stroke="none"
-              >
-                {locationDonutData.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={locationColors[i % locationColors.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<PieTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <ChartLegend
-          items={locationDonutData.map((l, i) => ({
-            label: `${l.name} (${l.value})`,
-            color: locationColors[i % locationColors.length],
-          }))}
-        />
+        {hasLocationData ? (
+          <>
+            <div className="h-[180px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={locationDonutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="55%"
+                    outerRadius="85%"
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {locationDonutData.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={locationColors[i % locationColors.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend
+              items={locationDonutData.map((l, i) => ({
+                label: `${l.name} (${l.value})`,
+                color: locationColors[i % locationColors.length],
+              }))}
+            />
+          </>
+        ) : (
+          <NoChartData message="No location data available for the current filters" />
+        )}
       </div>
 
       {/* Domain Bar Chart */}
@@ -97,36 +121,46 @@ export function InsightsCharts({ filteredData }: InsightsChartsProps) {
             Field / domain distribution
           </div>
         </div>
-        <div className="h-[180px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={domainBarData} layout="vertical">
-              <XAxis
-                type="number"
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="domain"
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-                width={80}
-                tickFormatter={(v: string) =>
-                  v.length > 10 ? v.substring(0, 10) + "..." : v
-                }
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]}>
-                {domainBarData.map((_, i) => (
-                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {hasDomainData ? (
+          <div className="mt-4" style={{ height: domainChartHeight }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={domainBarData}
+                layout="vertical"
+                margin={{ top: 8, right: 12, bottom: 8, left: 8 }}
+                barCategoryGap="18%"
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 13 }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="domain"
+                  tick={{ fontSize: 13 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={domainAxisWidth}
+                  interval={0}
+                  tickFormatter={(v: string) =>
+                    v.length > 22 ? v.substring(0, 22) + "..." : v
+                  }
+                />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                  {domainBarData.map((_, i) => (
+                    <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <NoChartData message="No domain data available for the current filters" />
+        )}
       </div>
 
       {/* Attendance by Branch */}
@@ -169,9 +203,7 @@ export function InsightsCharts({ filteredData }: InsightsChartsProps) {
             ))}
           </div>
         ) : (
-          <div className="h-[180px] flex items-center justify-center">
-            <p className="text-sm text-[#878c97]">No attendance data</p>
-          </div>
+          <NoChartData message="No attendance data available for the current filters" />
         )}
       </div>
     </div>
