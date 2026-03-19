@@ -23,6 +23,7 @@ import { AuditLogs } from "@/components/teacher/audit-logs";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ManageDeptCoordinators } from "@/components/teacher/manage-deptCoordinator";
 import { EmailReportsInfo } from "@/components/teacher/email-reports-info";
+import { toast } from "sonner";
 import {
   BookOpen,
   FileText,
@@ -50,6 +51,7 @@ interface InternshipFormData {
   startDate?: string;
   endDate?: string;
   stipend?: string;
+  stipendAmount?: number | null;
   mode?: string;
   studentClass?: string;
   studentBranch?: string;
@@ -91,18 +93,28 @@ export default function TeacherDashboard() {
       if (response.ok) {
         const data = await response.json();
         setForms(data);
+      } else {
+        toast.error("Could not load student forms.");
       }
     } catch (error) {
       console.error("Failed to fetch forms:", error);
+      toast.error("Failed to load forms : A network error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/teacher/login");
-    router.refresh();
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+    } catch (e) {
+      console.error(e);
+      toast.error("Logout failed : Redirecting to login...");
+    } finally {
+      router.push("/teacher/login");
+      router.refresh();
+    }
   };
 
   const stats = {
@@ -488,6 +500,7 @@ export default function TeacherDashboard() {
                 startDate: (f as any).startDate ?? "",
                 endDate: (f as any).endDate ?? "",
                 stipend: (f as any).stipend ?? "",
+                stipendAmount: (f as any).stipendAmount ?? null,
                 mode: (f as any).mode ?? "",
                 studentClass: (f as any).studentClass ?? "",
                 studentBranch: (f as any).studentBranch ?? "",

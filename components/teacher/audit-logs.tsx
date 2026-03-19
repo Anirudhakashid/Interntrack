@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -68,9 +69,12 @@ export function AuditLogs({ forms }: AuditLogsProps) {
       if (response.ok) {
         const data = await response.json();
         setLogs(data);
+      } else {
+        toast.error("Could not load verification logs.");
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
+      toast.error("Failed to load logs : A network error occurred.");
     } finally {
       setLoading(false);
     }

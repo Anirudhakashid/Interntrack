@@ -3,6 +3,14 @@
     {
       "path": "/api/scheduled/attendanceReports",
       "schedule": "30 3 1,16 * *"
+    },
+    {
+      "path": "/api/scheduled/completed-internships",
+      "schedule": "0 2 */2 * *"
+    },
+    {
+      "path": "/api/scheduled/active-internships",
+      "schedule": "0 2 */2 * *"
     }
   ]
 }

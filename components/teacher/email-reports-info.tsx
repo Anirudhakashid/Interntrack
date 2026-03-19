@@ -11,11 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Mail, Calendar, Clock, FileText, CheckCircle, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function EmailReportsInfo() {
   const [sending, setSending] = useState(false);
-  const { toast } = useToast();
 
   const scheduleInfo = {
     frequency: "Every 15 days",
@@ -41,33 +40,17 @@ export function EmailReportsInfo() {
 
       if (response.ok) {
         const data = await response.json();
-        toast({
-          title: "✅ Success",
-          description: `Reports sent successfully to ${data.data?.successCount || 0} teachers`,
-          duration: 5000,
-        });
+        toast.success(
+          `Reports sent successfully to ${data.data?.successCount || 0} teachers`,
+          { duration: 5000 },
+        );
       } else if (response.status === 401) {
-        toast({
-          title: "Unauthorized",
-          description: "You are not allowed to send reports.",
-          variant: "destructive",
-          duration: 5000,
-        });
+        toast.error("You are not allowed to send reports.", { duration: 5000 });
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to send reports",
-          variant: "destructive",
-          duration: 5000,
-        });
+        toast.error("Failed to send reports", { duration: 5000 });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error sending reports",
-        variant: "destructive",
-        duration: 5000,
-      });
+      toast.error("Error sending reports", { duration: 5000 });
     } finally {
       setSending(false);
     }

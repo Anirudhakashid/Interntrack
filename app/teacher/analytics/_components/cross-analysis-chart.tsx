@@ -29,6 +29,10 @@ export function CrossAnalysisChart({
     return Array.from(branchSet);
   }, [branchCompanyChart]);
 
+  const companyCount = branchCompanyChart.length;
+  const shouldRotateTicks = companyCount > 6;
+  const chartMinWidth = Math.max(companyCount * 88, 520);
+
   return (
     <div className="bg-white border border-[#e8eaed] rounded-[14px] p-5 transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
@@ -48,36 +52,51 @@ export function CrossAnalysisChart({
           type="sq"
         />
       </div>
-      <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={branchCompanyChart}>
-            <XAxis
-              dataKey="company"
-              tick={{ fontSize: 13 }}
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-              tickFormatter={(v: string) =>
-                v.length > 8 ? v.substring(0, 8) + "..." : v
-              }
-            />
-            <YAxis
-              tick={{ fontSize: 13 }}
-              tickLine={false}
-              axisLine={false}
-              allowDecimals={false}
-            />
-            <Tooltip content={<ChartTooltip />} />
-            {branches.map((branch, i) => (
-              <Bar
-                key={branch}
-                dataKey={branch}
-                fill={BRANCH_COLORS[branch] || PALETTE[i % PALETTE.length]}
-                radius={[4, 4, 0, 0]}
+      <div className="mt-4 overflow-x-auto pb-2">
+        <div className="h-[240px]" style={{ minWidth: chartMinWidth }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={branchCompanyChart}
+              margin={{
+                top: 8,
+                right: 12,
+                left: 0,
+                bottom: shouldRotateTicks ? 36 : 8,
+              }}
+            >
+              <XAxis
+                dataKey="company"
+                tick={{ fontSize: 13 }}
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+                angle={shouldRotateTicks ? -35 : 0}
+                textAnchor={shouldRotateTicks ? "end" : "middle"}
+                height={shouldRotateTicks ? 64 : 30}
+                tickMargin={10}
+                minTickGap={shouldRotateTicks ? 0 : 12}
+                tickFormatter={(v: string) =>
+                  v.length > 12 ? v.substring(0, 12) + "..." : v
+                }
               />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+              <YAxis
+                tick={{ fontSize: 13 }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
+              <Tooltip content={<ChartTooltip />} />
+              {branches.map((branch, i) => (
+                <Bar
+                  key={branch}
+                  dataKey={branch}
+                  fill={BRANCH_COLORS[branch] || PALETTE[i % PALETTE.length]}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

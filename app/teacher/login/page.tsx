@@ -1,48 +1,54 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { BookOpen, Mail, Lock } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
+import { BookOpen, Mail, Lock } from "lucide-react";
 
 export default function TeacherLogin() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login/teacher', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/login/teacher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
       if (response.ok) {
-        router.push('/teacher/dashboard')
-        router.refresh()
+        toast.success("Login successful : Redirecting to dashboard...");
+        router.push("/teacher/dashboard");
+        router.refresh();
       } else {
-        const data = await response.json()
-        setError(data.error || 'Login failed')
+        const data = await response.json();
+        const msg = data.error || "Login failed";
+        toast.error(msg);
       }
     } catch (error) {
-      setError('Network error. Please try again.')
+      toast.error("Network error. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-4">
@@ -64,12 +70,6 @@ export default function TeacherLogin() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -85,7 +85,7 @@ export default function TeacherLogin() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -101,15 +101,19 @@ export default function TeacherLogin() {
                   />
                 </div>
               </div>
-              
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
+
+              <Button
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <LoadingSpinner className="w-4 h-4 mr-2" />
                     Signing in...
                   </>
                 ) : (
-                  'Sign In'
+                  "Sign In"
                 )}
               </Button>
             </form>
@@ -118,19 +122,25 @@ export default function TeacherLogin() {
 
         <div className="text-center text-sm text-gray-600 space-x-2">
           <span>
-            Are you a student?{' '}
-            <Link href="/student/login" className="text-emerald-600 hover:underline">
+            Are you a student?{" "}
+            <Link
+              href="/student/login"
+              className="text-emerald-600 hover:underline"
+            >
               Sign in here
             </Link>
           </span>
           <span className="block mt-1">
-            New teacher?{' '}
-            <Link href="/teacher/signup" className="text-emerald-600 hover:underline">
+            New teacher?{" "}
+            <Link
+              href="/teacher/signup"
+              className="text-emerald-600 hover:underline"
+            >
               Create an account
             </Link>
           </span>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +34,6 @@ interface Coordinator {
 export function ManageDeptCoordinators() {
   const [coordinators, setCoordinators] = useState<Coordinator[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [coordinatorToDelete, setCoordinatorToDelete] = useState<string | null>(
     null,
@@ -63,13 +61,15 @@ export function ManageDeptCoordinators() {
         } else {
           console.error("Invalid data format:", data);
           setCoordinators([]);
+          toast.error("Received unexpected data format from server.");
         }
       } else {
         setCoordinators([]);
+        toast.error("Could not load coordinators.");
       }
     } catch (error) {
       console.error("Fetch error:", error);
-      setError("Failed to fetch coordinators");
+      toast.error("Failed to load coordinators : A network error occurred.");
       setCoordinators([]);
     } finally {
       setLoading(false);
@@ -78,11 +78,9 @@ export function ManageDeptCoordinators() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
 
     if (!formData.branch || !formData.email || !formData.name) {
-      setError("All fields are required");
+      toast.error("All fields are required.");
       return;
     }
 
@@ -94,15 +92,16 @@ export function ManageDeptCoordinators() {
       });
 
       if (response.ok) {
-        setSuccess("Coordinator added successfully");
+        toast.success("Coordinator added successfully.");
         setFormData({ branch: "", email: "", name: "" });
         fetchCoordinators();
       } else {
         const data = await response.json();
-        setError(data.error || "Failed to add coordinator");
+        const msg = data.error || "Failed to add coordinator";
+        toast.error(msg);
       }
     } catch (error) {
-      setError("Network error");
+      toast.error("Could not add coordinator.");
     }
   };
 
@@ -123,13 +122,13 @@ export function ManageDeptCoordinators() {
       );
 
       if (response.ok) {
-        setSuccess("Coordinator deleted successfully");
+        toast.success("Coordinator deleted successfully.");
         fetchCoordinators();
       } else {
-        setError("Failed to delete coordinator");
+        toast.error("Failed to delete coordinator.");
       }
     } catch (error) {
-      setError("Network error");
+      toast.error("Could not delete coordinator.");
     } finally {
       setDeleteDialogOpen(false);
       setCoordinatorToDelete(null);
@@ -147,19 +146,6 @@ export function ManageDeptCoordinators() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAdd} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert>
-                <AlertDescription className="text-green-600">
-                  {success}
-                </AlertDescription>
-              </Alert>
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="branch">Branch Name *</Label>

@@ -1,48 +1,54 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { GraduationCap, Mail, Lock } from 'lucide-react'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
+import { GraduationCap, Mail, Lock } from "lucide-react";
 
 export default function StudentLogin() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login/student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/login/student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      })
+      });
 
       if (response.ok) {
-        router.push('/student/dashboard')
-        router.refresh()
+        toast.success("Login successful : Redirecting to dashboard...");
+        router.push("/student/dashboard");
+        router.refresh();
       } else {
-        const data = await response.json()
-        setError(data.error || 'Login failed')
+        const data = await response.json();
+        const msg = data.error || "Login failed";
+        toast.error(msg);
       }
     } catch (error) {
-      setError('Network error. Please try again.')
+      toast.error("Network error. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -64,12 +70,6 @@ export default function StudentLogin() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -85,7 +85,7 @@ export default function StudentLogin() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -101,7 +101,7 @@ export default function StudentLogin() {
                   />
                 </div>
               </div>
-              
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
@@ -109,7 +109,7 @@ export default function StudentLogin() {
                     Signing in...
                   </>
                 ) : (
-                  'Sign In'
+                  "Sign In"
                 )}
               </Button>
             </form>
@@ -118,19 +118,25 @@ export default function StudentLogin() {
 
         <div className="text-center text-sm text-gray-600 space-x-2">
           <span>
-            Are you a teacher?{' '}
-            <Link href="/teacher/login" className="text-blue-600 hover:underline">
+            Are you a teacher?{" "}
+            <Link
+              href="/teacher/login"
+              className="text-blue-600 hover:underline"
+            >
               Sign in here
             </Link>
           </span>
           <span className="block mt-1">
-            New student?{' '}
-            <Link href="/student/signup" className="text-blue-600 hover:underline">
+            New student?{" "}
+            <Link
+              href="/student/signup"
+              className="text-blue-600 hover:underline"
+            >
               Create an account
             </Link>
           </span>
         </div>
       </div>
     </div>
-  )
+  );
 }

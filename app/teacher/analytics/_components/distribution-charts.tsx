@@ -12,7 +12,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChartTooltip, PieTooltip, ChartLegend } from "./chart-tooltip";
+import {
+  ChartTooltip,
+  PieTooltip,
+  ChartLegend,
+  NoChartData,
+} from "./chart-tooltip";
 import {
   BRANCH_COLORS,
   COLORS,
@@ -63,6 +68,18 @@ export function DistributionCharts({ filteredData }: DistributionChartsProps) {
     ].filter((d) => d.count > 0);
   }, [filteredData.modeAnalytics]);
 
+  const stipendAmountChartData = useMemo(() => {
+    return filteredData.stipendAmountAnalytics.distribution.filter(
+      (item) => item.count > 0,
+    );
+  }, [filteredData.stipendAmountAnalytics]);
+
+  const hasBranchData = filteredData.branchDistribution.length > 0;
+  const hasCompanyData = companyDonutData.length > 0;
+  const hasStipendData = stipendChartData.length > 0;
+  const hasStipendAmountData = stipendAmountChartData.length > 0;
+  const hasModeData = modeChartData.length > 0;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
       {/* Branch Distribution Bar Chart */}
@@ -75,45 +92,52 @@ export function DistributionCharts({ filteredData }: DistributionChartsProps) {
             How internships are spread across departments
           </div>
         </div>
-        <div className="h-[200px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={filteredData.branchDistribution}>
-              <XAxis
-                dataKey="branch"
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-                tickFormatter={(v: string) =>
-                  v.length > 8 ? v.substring(0, 8) + "..." : v
-                }
-              />
-              <YAxis
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                {filteredData.branchDistribution.map((entry, i) => (
-                  <Cell
-                    key={entry.branch}
-                    fill={
-                      BRANCH_COLORS[entry.branch] || PALETTE[i % PALETTE.length]
+        {hasBranchData ? (
+          <>
+            <div className="h-[200px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={filteredData.branchDistribution}>
+                  <XAxis
+                    dataKey="branch"
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    tickFormatter={(v: string) =>
+                      v.length > 8 ? v.substring(0, 8) + "..." : v
                     }
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <ChartLegend
-          items={filteredData.branchDistribution.map((b, i) => ({
-            label: b.branch,
-            color: BRANCH_COLORS[b.branch] || PALETTE[i % PALETTE.length],
-          }))}
-          type="sq"
-        />
+                  <YAxis
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {filteredData.branchDistribution.map((entry, i) => (
+                      <Cell
+                        key={entry.branch}
+                        fill={
+                          BRANCH_COLORS[entry.branch] ||
+                          PALETTE[i % PALETTE.length]
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend
+              items={filteredData.branchDistribution.map((b, i) => ({
+                label: b.branch,
+                color: BRANCH_COLORS[b.branch] || PALETTE[i % PALETTE.length],
+              }))}
+              type="sq"
+            />
+          </>
+        ) : (
+          <NoChartData message="No branch data available for the current filters" />
+        )}
       </div>
 
       {/* Company Distribution Donut */}
@@ -126,35 +150,41 @@ export function DistributionCharts({ filteredData }: DistributionChartsProps) {
             Top hiring companies this cycle
           </div>
         </div>
-        <div className="h-[200px] flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={companyDonutData}
-                cx="50%"
-                cy="50%"
-                innerRadius="55%"
-                outerRadius="85%"
-                dataKey="value"
-                stroke="none"
-              >
-                {companyDonutData.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={companyDonutColors[i % companyDonutColors.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<PieTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        <ChartLegend
-          items={companyDonutData.map((c, i) => ({
-            label: `${c.name} (${c.value})`,
-            color: companyDonutColors[i % companyDonutColors.length],
-          }))}
-        />
+        {hasCompanyData ? (
+          <>
+            <div className="h-[200px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={companyDonutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="55%"
+                    outerRadius="85%"
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {companyDonutData.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={companyDonutColors[i % companyDonutColors.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend
+              items={companyDonutData.map((c, i) => ({
+                label: `${c.name} (${c.value})`,
+                color: companyDonutColors[i % companyDonutColors.length],
+              }))}
+            />
+          </>
+        ) : (
+          <NoChartData message="No company data available for the current filters" />
+        )}
       </div>
 
       {/* Stipend Distribution Donut */}
@@ -167,35 +197,110 @@ export function DistributionCharts({ filteredData }: DistributionChartsProps) {
             Paid vs unpaid vs unknown internships
           </div>
         </div>
-        <div className="h-[180px] flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={stipendChartData}
-                cx="50%"
-                cy="50%"
-                innerRadius="55%"
-                outerRadius="85%"
-                dataKey="value"
-                stroke="none"
-              >
-                {stipendChartData.map((entry) => (
-                  <Cell
-                    key={entry.name}
-                    fill={STIPEND_COLORS[entry.name] || "#9ca3af"}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<PieTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+        {hasStipendData ? (
+          <>
+            <div className="h-[180px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={stipendChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="55%"
+                    outerRadius="85%"
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {stipendChartData.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={STIPEND_COLORS[entry.name] || "#9ca3af"}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend
+              items={stipendChartData.map((d) => ({
+                label: `${d.name} (${d.value})`,
+                color: STIPEND_COLORS[d.name] || "#9ca3af",
+              }))}
+            />
+          </>
+        ) : (
+          <NoChartData message="No stipend data available for the current filters" />
+        )}
+      </div>
+
+      {/* Stipend Amount Distribution */}
+      <div className="bg-white border border-[#e8eaed] rounded-[14px] p-5 transition-shadow hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        <div className="mb-1">
+          <div className="text-base font-semibold text-[#111318] tracking-[-0.01em]">
+            Stipend Amount
+          </div>
+          <div className="text-sm text-[#878c97] mt-0.5">
+            Monthly stipend amount distribution in INR
+          </div>
         </div>
-        <ChartLegend
-          items={stipendChartData.map((d) => ({
-            label: `${d.name} (${d.value})`,
-            color: STIPEND_COLORS[d.name] || "#9ca3af",
-          }))}
-        />
+        {hasStipendAmountData ? (
+          <>
+            <div className="h-[180px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stipendAmountChartData}>
+                  <XAxis
+                    dataKey="range"
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {stipendAmountChartData.map((entry, i) => (
+                      <Cell
+                        key={entry.range}
+                        fill={PALETTE[(i + 2) % PALETTE.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 rounded-lg border border-[#e8eaed] bg-[#fafafa] px-3 py-2">
+              <div className="text-xs uppercase tracking-[0.06em] text-[#878c97]">
+                Summary
+              </div>
+              <div className="mt-1 text-sm text-[#3d4047]">
+                Avg:{" "}
+                <span className="font-semibold text-[#111318]">
+                  {filteredData.stipendAmountAnalytics.average == null
+                    ? "N/A"
+                    : `INR ${filteredData.stipendAmountAnalytics.average.toLocaleString("en-IN")}`}
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-[#878c97]">
+                Min{" "}
+                {filteredData.stipendAmountAnalytics.min == null
+                  ? "N/A"
+                  : `INR ${filteredData.stipendAmountAnalytics.min.toLocaleString("en-IN")}`}{" "}
+                • Max{" "}
+                {filteredData.stipendAmountAnalytics.max == null
+                  ? "N/A"
+                  : `INR ${filteredData.stipendAmountAnalytics.max.toLocaleString("en-IN")}`}{" "}
+                • Records {filteredData.stipendAmountAnalytics.count}
+              </div>
+            </div>
+          </>
+        ) : (
+          <NoChartData message="No stipend amount data available for the current filters" />
+        )}
       </div>
 
       {/* Mode Distribution Bar Chart */}
@@ -208,39 +313,45 @@ export function DistributionCharts({ filteredData }: DistributionChartsProps) {
             On-site, remote, and hybrid breakdown
           </div>
         </div>
-        <div className="h-[180px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={modeChartData}>
-              <XAxis
-                dataKey="mode"
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 13 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                {modeChartData.map((entry) => (
-                  <Cell
-                    key={entry.mode}
-                    fill={MODE_COLORS[entry.mode] || "#9ca3af"}
+        {hasModeData ? (
+          <>
+            <div className="h-[180px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={modeChartData}>
+                  <XAxis
+                    dataKey="mode"
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <ChartLegend
-          items={modeChartData.map((d) => ({
-            label: `${d.mode} (${d.count})`,
-            color: MODE_COLORS[d.mode] || "#9ca3af",
-          }))}
-          type="sq"
-        />
+                  <YAxis
+                    tick={{ fontSize: 13 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {modeChartData.map((entry) => (
+                      <Cell
+                        key={entry.mode}
+                        fill={MODE_COLORS[entry.mode] || "#9ca3af"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend
+              items={modeChartData.map((d) => ({
+                label: `${d.mode} (${d.count})`,
+                color: MODE_COLORS[d.mode] || "#9ca3af",
+              }))}
+              type="sq"
+            />
+          </>
+        ) : (
+          <NoChartData message="No internship mode data available for the current filters" />
+        )}
       </div>
     </div>
   );

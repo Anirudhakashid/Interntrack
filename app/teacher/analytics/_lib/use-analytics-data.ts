@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import {
+  getAnalyticsDisplayLabel,
+  getNormalizedAnalyticsKey,
+  getPreferredAnalyticsLabel,
+} from "@/lib/analytics-normalization";
 import type {
   AnalyticsData,
   FilteredData,
@@ -9,7 +14,9 @@ import type {
   ModeFilter,
   DurationAnalytics,
   DomainTrend,
+  StipendAmountAnalytics,
 } from "./types";
+import { toast } from "sonner";
 
 function getAcademicYear(date: Date): string {
   const month = date.getMonth();
@@ -59,6 +66,7 @@ export function useAnalyticsData() {
           err instanceof Error ? err.message : "An error occurred";
         setError(errorMessage);
         console.error("Error fetching analytics:", err);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -68,9 +76,16 @@ export function useAnalyticsData() {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/teacher/login");
-    router.refresh();
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+    } catch (e) {
+      console.error(e);
+      toast.error("Logout failed : Redirecting to login...");
+    } finally {
+      router.push("/teacher/login");
+      router.refresh();
+    }
   }, [router]);
 
   const filteredData: FilteredData | null = useMemo(() => {
@@ -82,7 +97,9 @@ export function useAnalyticsData() {
     // Branch filter
     if (selectedBranch !== "all") {
       internships = internships.filter(
-        (i) => (i.student.branch || "Not Specified") === selectedBranch,
+        (i) =>
+          getAnalyticsDisplayLabel(i.studentBranch || i.student.branch) ===
+          selectedBranch,
       );
     }
 
@@ -111,20 +128,47 @@ export function useAnalyticsData() {
     }
 
     // Compute all analytics from filtered internships
-    const branchMap = new Map<string, number>();
-    const companyMap = new Map<string, number>();
+    const branchMap = new Map<string, { label: string; count: number }>();
+    const companyMap = new Map<string, { label: string; count: number }>();
     internships.forEach((i) => {
-      const branch = i.student.branch || "Not Specified";
-      branchMap.set(branch, (branchMap.get(branch) || 0) + 1);
-      companyMap.set(i.companyName, (companyMap.get(i.companyName) || 0) + 1);
+      const branchValue = i.studentBranch || i.student.branch;
+      const branchKey = getNormalizedAnalyticsKey(branchValue);
+      const companyKey = getNormalizedAnalyticsKey(i.companyName);
+
+      if (!branchMap.has(branchKey)) {
+        branchMap.set(branchKey, {
+          label: getAnalyticsDisplayLabel(branchValue),
+          count: 0,
+        });
+      }
+      if (!companyMap.has(companyKey)) {
+        companyMap.set(companyKey, {
+          label: getAnalyticsDisplayLabel(i.companyName),
+          count: 0,
+        });
+      }
+
+      const branchEntry = branchMap.get(branchKey)!;
+      branchEntry.label = getPreferredAnalyticsLabel(
+        branchEntry.label,
+        branchValue,
+      );
+      branchEntry.count++;
+
+      const companyEntry = companyMap.get(companyKey)!;
+      companyEntry.label = getPreferredAnalyticsLabel(
+        companyEntry.label,
+        i.companyName,
+      );
+      companyEntry.count++;
     });
 
     const branchDistribution = Array.from(branchMap.entries())
-      .map(([branch, count]) => ({ branch, count }))
+      .map(([, { label, count }]) => ({ branch: label, count }))
       .sort((a, b) => b.count - a.count);
 
     const companyDistribution = Array.from(companyMap.entries())
-      .map(([company, count]) => ({ company, count }))
+      .map(([, { label, count }]) => ({ company: label, count }))
       .sort((a, b) => b.count - a.count);
 
     // Stipend
@@ -135,6 +179,36 @@ export function useAnalyticsData() {
       else if (val === "unpaid") stipendAnalytics.unpaid++;
       else stipendAnalytics.unknown++;
     });
+
+    const stipendAmounts = internships
+      .map((i) => i.stipendAmount)
+      .filter((amount): amount is number => amount !== null && amount !== undefined);
+    const stipendAmountRanges = [
+      { range: "Below 5k", min: 0, max: 4999 },
+      { range: "5k-10k", min: 5000, max: 10000 },
+      { range: "10k-20k", min: 10001, max: 20000 },
+      { range: "20k-40k", min: 20001, max: 40000 },
+      { range: "40k+", min: 40001, max: Infinity },
+    ];
+    const stipendAmountAnalytics: StipendAmountAnalytics = {
+      average:
+        stipendAmounts.length > 0
+          ? Math.round(
+              stipendAmounts.reduce((sum, amount) => sum + amount, 0) /
+                stipendAmounts.length,
+            )
+          : null,
+      min: stipendAmounts.length > 0 ? Math.min(...stipendAmounts) : null,
+      max: stipendAmounts.length > 0 ? Math.max(...stipendAmounts) : null,
+      total: stipendAmounts.reduce((sum, amount) => sum + amount, 0),
+      count: stipendAmounts.length,
+      distribution: stipendAmountRanges.map(({ range, min, max }) => ({
+        range,
+        count: stipendAmounts.filter(
+          (amount) => amount >= min && amount <= max,
+        ).length,
+      })),
+    };
 
     // Mode
     const modeAnalytics = { online: 0, offline: 0, hybrid: 0, unknown: 0 };
@@ -183,66 +257,121 @@ export function useAnalyticsData() {
       .sort((a, b) => a.year.localeCompare(b.year));
 
     // Branch-company chart
-    const branchCompanyMap = new Map<string, Map<string, number>>();
+    const branchCompanyMap = new Map<
+      string,
+      { label: string; companies: Map<string, { label: string; count: number }> }
+    >();
     internships.forEach((i) => {
-      const branch = i.student.branch || "Not Specified";
-      if (!branchCompanyMap.has(i.companyName)) {
-        branchCompanyMap.set(i.companyName, new Map());
+      const branchValue = i.studentBranch || i.student.branch;
+      const branchKey = getNormalizedAnalyticsKey(branchValue);
+      const companyKey = getNormalizedAnalyticsKey(i.companyName);
+
+      if (!branchCompanyMap.has(companyKey)) {
+        branchCompanyMap.set(companyKey, {
+          label: getAnalyticsDisplayLabel(i.companyName),
+          companies: new Map(),
+        });
       }
-      const bm = branchCompanyMap.get(i.companyName)!;
-      bm.set(branch, (bm.get(branch) || 0) + 1);
+      const companyEntry = branchCompanyMap.get(companyKey)!;
+      companyEntry.label = getPreferredAnalyticsLabel(
+        companyEntry.label,
+        i.companyName,
+      );
+
+      if (!companyEntry.companies.has(branchKey)) {
+        companyEntry.companies.set(branchKey, {
+          label: getAnalyticsDisplayLabel(branchValue),
+          count: 0,
+        });
+      }
+      const branchEntry = companyEntry.companies.get(branchKey)!;
+      branchEntry.label = getPreferredAnalyticsLabel(
+        branchEntry.label,
+        branchValue,
+      );
+      branchEntry.count++;
     });
     const branchCompanyChart = Array.from(branchCompanyMap.entries())
       .sort((a, b) => {
-        const totalA = Array.from(a[1].values()).reduce(
-          (sum, val) => sum + val,
+        const totalA = Array.from(a[1].companies.values()).reduce(
+          (sum, val) => sum + val.count,
           0,
         );
-        const totalB = Array.from(b[1].values()).reduce(
-          (sum, val) => sum + val,
+        const totalB = Array.from(b[1].companies.values()).reduce(
+          (sum, val) => sum + val.count,
           0,
         );
         return totalB - totalA;
       })
-      .map(([company, bMap]) => {
-        const data: Record<string, string | number> = { company };
-        bMap.forEach((count, branch) => {
-          data[branch] = count;
+      .map(([, { label, companies }]) => {
+        const data: Record<string, string | number> = { company: label };
+        companies.forEach(({ label: branchLabel, count }) => {
+          data[branchLabel] = count;
         });
         return data;
       });
 
     // Location distribution
-    const locationMap = new Map<string, number>();
+    const locationMap = new Map<string, { label: string; count: number }>();
     internships.forEach((i) => {
-      const loc = i.companyLocation || "Not Specified";
-      locationMap.set(loc, (locationMap.get(loc) || 0) + 1);
+      const locationKey = getNormalizedAnalyticsKey(i.companyLocation);
+      if (!locationMap.has(locationKey)) {
+        locationMap.set(locationKey, {
+          label: getAnalyticsDisplayLabel(i.companyLocation),
+          count: 0,
+        });
+      }
+      const locationEntry = locationMap.get(locationKey)!;
+      locationEntry.label = getPreferredAnalyticsLabel(
+        locationEntry.label,
+        i.companyLocation,
+      );
+      locationEntry.count++;
     });
     const locationDistribution = Array.from(locationMap.entries())
-      .map(([location, count]) => ({ location, count }))
+      .map(([, { label, count }]) => ({ location: label, count }))
       .sort((a, b) => b.count - a.count);
 
     // Domain distribution
-    const domainMap = new Map<string, number>();
+    const domainMap = new Map<string, { label: string; count: number }>();
     internships.forEach((i) => {
-      const dom = i.domain || "Not Specified";
-      domainMap.set(dom, (domainMap.get(dom) || 0) + 1);
+      const domainKey = getNormalizedAnalyticsKey(i.domain);
+      if (!domainMap.has(domainKey)) {
+        domainMap.set(domainKey, {
+          label: getAnalyticsDisplayLabel(i.domain),
+          count: 0,
+        });
+      }
+      const domainEntry = domainMap.get(domainKey)!;
+      domainEntry.label = getPreferredAnalyticsLabel(domainEntry.label, i.domain);
+      domainEntry.count++;
     });
     const domainDistribution = Array.from(domainMap.entries())
-      .map(([domain, count]) => ({ domain, count }))
+      .map(([, { label, count }]) => ({ domain: label, count }))
       .sort((a, b) => b.count - a.count);
 
     // Domain trends over time (top domains by academic year)
-    const domainYearMap = new Map<string, Map<string, number>>();
+    const domainYearMap = new Map<
+      string,
+      Map<string, { label: string; count: number }>
+    >();
     internships.forEach((i) => {
-      const dom = i.domain || "Not Specified";
+      const domainKey = getNormalizedAnalyticsKey(i.domain);
       const date = i.startDate || i.createdAt;
       const year = getAcademicYear(new Date(date));
       if (!domainYearMap.has(year)) {
         domainYearMap.set(year, new Map());
       }
       const yearDomains = domainYearMap.get(year)!;
-      yearDomains.set(dom, (yearDomains.get(dom) || 0) + 1);
+      if (!yearDomains.has(domainKey)) {
+        yearDomains.set(domainKey, {
+          label: getAnalyticsDisplayLabel(i.domain),
+          count: 0,
+        });
+      }
+      const domainEntry = yearDomains.get(domainKey)!;
+      domainEntry.label = getPreferredAnalyticsLabel(domainEntry.label, i.domain);
+      domainEntry.count++;
     });
     // Get top 6 domains for the chart
     const topDomains = domainDistribution.slice(0, 6).map((d) => d.domain);
@@ -251,7 +380,8 @@ export function useAnalyticsData() {
       .map(([year, domains]) => {
         const entry: DomainTrend = { year };
         topDomains.forEach((dom) => {
-          entry[dom] = domains.get(dom) || 0;
+          const domainKey = getNormalizedAnalyticsKey(dom);
+          entry[dom] = domains.get(domainKey)?.count || 0;
         });
         return entry;
       });
@@ -283,6 +413,7 @@ export function useAnalyticsData() {
       topCompanies: companyDistribution.slice(0, 10),
       branchCompanyChart,
       stipendAnalytics,
+      stipendAmountAnalytics,
       modeAnalytics,
       durationAnalytics,
       yearAnalytics,
@@ -302,16 +433,6 @@ export function useAnalyticsData() {
       filteredData.stipendAnalytics.unknown;
     if (total === 0) return 0;
     return Math.round((filteredData.stipendAnalytics.paid / total) * 100);
-  }, [filteredData]);
-
-  const topMode = useMemo(() => {
-    if (!filteredData) return "N/A";
-    const { online, offline, hybrid } = filteredData.modeAnalytics;
-    const max = Math.max(online, offline, hybrid);
-    if (max === 0) return "N/A";
-    if (max === offline) return "On-site";
-    if (max === online) return "Remote";
-    return "Hybrid";
   }, [filteredData]);
 
   const generateCSV = useCallback(() => {
@@ -354,6 +475,19 @@ export function useAnalyticsData() {
     csvContent += `Unpaid,${filteredData.stipendAnalytics.unpaid}\n`;
     csvContent += `Unknown,${filteredData.stipendAnalytics.unknown}\n\n`;
 
+    csvContent += "STIPEND AMOUNT STATISTICS\n";
+    csvContent += `Records With Amount,${filteredData.stipendAmountAnalytics.count}\n`;
+    csvContent += `Average Monthly Stipend (INR),${filteredData.stipendAmountAnalytics.average ?? "N/A"}\n`;
+    csvContent += `Min Monthly Stipend (INR),${filteredData.stipendAmountAnalytics.min ?? "N/A"}\n`;
+    csvContent += `Max Monthly Stipend (INR),${filteredData.stipendAmountAnalytics.max ?? "N/A"}\n`;
+    csvContent += `Total Monthly Stipend Sum (INR),${filteredData.stipendAmountAnalytics.total}\n`;
+    csvContent += "STIPEND AMOUNT DISTRIBUTION\n";
+    csvContent += "Range,Count\n";
+    filteredData.stipendAmountAnalytics.distribution.forEach((item) => {
+      csvContent += `${item.range},${item.count}\n`;
+    });
+    csvContent += "\n";
+
     csvContent += "MODE DISTRIBUTION\n";
     csvContent += "Mode,Count\n";
     csvContent += `Online,${filteredData.modeAnalytics.online}\n`;
@@ -393,7 +527,10 @@ export function useAnalyticsData() {
     });
     csvContent += "\n";
 
-    if (filteredData.domainTrends.length > 0 && filteredData.domainTrendKeys.length > 0) {
+    if (
+      filteredData.domainTrends.length > 0 &&
+      filteredData.domainTrendKeys.length > 0
+    ) {
       csvContent += "DOMAIN TRENDS BY ACADEMIC YEAR\n";
       csvContent += `Academic Year,${filteredData.domainTrendKeys.join(",")}\n`;
       filteredData.domainTrends.forEach((row) => {
@@ -452,7 +589,6 @@ export function useAnalyticsData() {
     setModeFilter,
     allBranches,
     paidPercent,
-    topMode,
     generateCSV,
     handleLogout,
   };

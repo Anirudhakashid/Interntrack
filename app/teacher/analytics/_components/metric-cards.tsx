@@ -5,14 +5,13 @@ import {
   CheckCircle,
   ClipboardList,
   DollarSign,
-  Monitor,
+  Briefcase,
 } from "lucide-react";
 import type { FilteredData } from "../_lib/types";
 
 interface MetricCardsProps {
   filteredData: FilteredData;
   paidPercent: number;
-  topMode: string;
 }
 
 const metrics = [
@@ -45,29 +44,33 @@ const metrics = [
     iconColor: "text-amber-600",
   },
   {
-    key: "mode",
-    label: "Top Mode",
-    icon: Monitor,
-    iconBg: "bg-cyan-50",
-    iconColor: "text-cyan-600",
+    key: "topRecruiter",
+    label: "Top Recruiter",
+    icon: Briefcase,
+    iconBg: "bg-slate-100",
+    iconColor: "text-slate-700",
   },
 ];
 
 export function MetricCards({
   filteredData,
   paidPercent,
-  topMode,
 }: MetricCardsProps) {
+  const topRecruiter =
+    filteredData.topCompanies[0] && filteredData.topCompanies[0].count > 1
+      ? filteredData.topCompanies[0].company
+      : "N/A";
+
   const values: Record<string, string | number> = {
     total: filteredData.totalInternships,
     active: filteredData.activeNow,
     completed: filteredData.completed,
     paid: `${paidPercent}%`,
-    mode: topMode,
+    topRecruiter,
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5">
       {metrics.map((m) => {
         const Icon = m.icon;
         return (
